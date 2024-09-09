@@ -1,0 +1,1418 @@
+{% extends 'base.html' %}
+{% block title %}Filter Records{% endblock %}
+{% block body %}
+
+<div id="spinner-overlay" class="spinner-overlay">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+<div class="jumbotron" style="background-color: beige;">
+    <div class="container" style="width: 100%;">
+        <div id="count-display" class="count-display container" style="width: 80%;">
+            <!-- Counts will be displayed here -->
+            <div class="row">
+                <div class="col count-rows" style="float: left;">
+                </div>
+                <div class="row count-owners" style="float: right;">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container filter-container"
+        style="margin: 0 0; padding: 2vh 0; vertical-align: middle; text-align: center; max-width: 100%; width: 100%;">
+        <form id="fetchRecordsForm" target="_blank">
+
+            <!-- State, County, City -->
+            <div class="row form-group" style="margin: 2vh 2vw; padding: 2vh 2vw; background-color: bisque;">
+                <div class="col-md-2 property-state-div">
+                    
+
+                    <label for="property-states"><b>Property State Name</b></label>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-state" data-field="property-states">
+                        <label class="form-check-label" for="include-null-state">Include Null</label>
+                    </div>
+
+
+                    <select id="state" multiple size="5" name="property-states">
+                        <!-- Options will be dynamically populated -->
+                    </select>
+                    
+
+                </div>
+                <div class="col-md-2 property-county-div">
+
+                    <label for="property-counties"><b>Property County Name</b></label>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-county" data-field="property-counties">
+                        <label class="form-check-label" for="include-null-state">Include Null</label>
+                    </div>
+
+
+                    <select id="county" multiple size="5" name="property-counties">
+                        <!-- Options will be dynamically populated -->
+                    </select>
+
+                </div>
+                <div class="col-md-2 property-city-div">
+
+                    <label for="property-cities"><b>Property City Name</b></label>
+                    
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-city" data-field="property-cities">
+                        <label class="form-check-label" for="include-null-state">Include Null</label>
+                    </div>
+
+                    <select id="city" multiple size="5" name="property-cities">
+                        <!-- Options will be dynamically populated -->
+                    </select>
+
+                </div>
+
+                <!-- Owner Name Type -->
+                <div class="col-md-2">
+                    <div class="owner-name-type-div container">
+                        <label for="owner-name-type">
+                            <b>Owner Name Type</b>
+                        </label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-owner-name-type" data-field="owner-name-type">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+                        <select name="owner-name-type" id="owner-name-type" class="form-control" multiple size="5">
+                            <!-- Option to select all owner name types -->
+                            <option value="all">All</option>
+                        </select>
+                    </div>
+                </div>
+
+
+                <!-- Zip Code Matching -->
+                <div class="col-md-2">
+                    <div class="zip-code-matching-div container">
+                        <label for="zip-code-matching">
+                            <b>Zip Code Matching</b>
+                        </label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-zip-code-matching" data-field="zip-code-matching">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+                        <select name="zip-code-matching" id="zip-code-matching" size="5" class="form-control">
+                            <option value="all">All</option>
+                            <option value="True">True</option>
+                            <option value="False">False</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Lot Acreage -->
+                <div class="col-md-2">
+                    <div class="lot_acreage-div container">
+
+                        <label for="lot_acreage-min">
+                            <b>Lot Acreage</b>
+                        </label>
+                         <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-lot_acreage" data-field="lot_acreage">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+                        <input type="number" name="lot_acreage-min" id="lot_acreage-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="lot_acreage-max" id="lot_acreage-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+                <!-- Significant Flood Zones -->
+                <div class="col-md-2">
+                    <div class="significant_flood_zones-div container">
+
+                        <label for="significant_flood_zones-min">Significant Flood Zones</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-significant_flood_zones" data-field="significant_flood_zones">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+
+                        <input type="number" name="significant_flood_zones-min" id="significant_flood_zones-min"
+                            class="form-control" placeholder="Min" style="width: 100%;">
+                        <input type="number" name="significant_flood_zones-max" id="significant_flood_zones-max"
+                            class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                <!-- Slope Mean -->
+                <div class="col-md-2">
+                    <div class="slope_mean-div container">
+
+                        <label for="slope_mean-min">Slope Mean</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-slope_mean" data-field="slope_mean">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+
+                        <input type="number" name="slope_mean-min" id="slope_mean-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="slope_mean-max" id="slope_mean-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                 <!-- Wetlands Total -->
+
+                <div class="col-md-2">
+                    <div class="Wetlands_Total-div container">
+                        <label for="wetlands_total-min">Wetlands Total</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-wetlands_total" data-field="wetlands_total">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+                        <input type="number" name="wetlands_total-min" id="wetlands_total-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="wetlands_total-max" id="Wetlands_Total-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+                 <!-- Building_square_footage -->
+                <div class="col-md-2">
+                    <div class="building_square_footage-div container">
+                        <label for="building_square_footage-min">Building_square_footage</label>
+                         <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-building_square_footage" data-field="building_square_footage">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+                        <input type="number" name="building_square_footage-min" id="building_square_footage_max-min"
+                            class="form-control" placeholder="Min" style="width: 100%;">
+                        <input type="number" name="building_square_footage-max" id="building_square_footage_max-max"
+                            class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+                <!-- Largest_building -->
+                <div class="col-md-2">
+                    <div class="largest_building-div container">
+                        <label for="largest_building-min">Largest_building</label>
+                         <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-largest_building" data-field="largest_building">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+                        <input type="number" name="largest_building-min" id="largest_building-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="largest_building-max" id="largest_building-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+                 <!-- Percent_square_area_cleaned -->
+                <div class="col-md-2">
+                    <div class="percent_square_area_cleaned-div container">
+                        <label for="percent_square_area_cleaned-min">Percent_square_area_cleaned</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-percent_square_area_cleaned" data-field="percent_square_area_cleaned">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+                        <input type="number" name="percent_square_area_cleaned-min" id="percent_square_area_cleaned-min"
+                            class="form-control" placeholder="Min" style="width: 100%;">
+                        <input type="number" name="percent_square_area_cleaned-max" id="percent_square_area_cleaned-max"
+                            class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+                <!-- Total_building_area -->
+                <div class="col-md-2">
+                    <div class="total_building_area-div container">
+                        <label for="total_building_area-min">Total_building_area</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-total_building_area" data-field="total_building_area">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+                        <input type="number" name="total_building_area-min" id="total_building_area-min"
+                            class="form-control" placeholder="Min" style="width: 100%;">
+                        <input type="number" name="total_building_area-max" id="total_building_area-max"
+                            class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+
+
+              
+
+               
+
+
+
+            </div>
+            <div class="row form-group" style="margin: 2vh 2vw; padding: 2vh 2vw; background-color: bisque;">
+               
+                  <!-- Nearest Road Type -->
+                <div class="col-md-2">
+                    <div class="nearest_road_types-div container">
+
+                        <label for="nearest_road_types">Nearest Road Type</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-nearest_road_types" data-field="nearest_road_types">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+
+                        <select name="nearest_road_types" id="nearest_road_types" class="form-control" multiple size="5"
+                            style="width: 100%;">
+                            <option value="all">Select All</option>
+                            <!-- Options will be dynamically populated by JavaScript -->
+                        </select>
+
+                    </div>
+                </div>
+
+                <!-- Distance to Nearest Road from Centroid -->
+                <div class="col-md-2">
+                    <div class="distance_to_nearest_road_from_centroid-div container">
+
+                        <label for="distance_to_nearest_road_from_centroid-min">Distance to Nearest Road (from
+                            centroid)</label>
+
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-distance_to_nearest_road_from_centroid" data-field="distance_to_nearest_road_from_centroid">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+
+                        <input type="number" name="distance_to_nearest_road_from_centroid-min"
+                            id="distance_to_nearest_road_from_centroid-min" class="form-control" placeholder="Min"
+                            style="width: 100%;">
+                        <input type="number" name="distance_to_nearest_road_from_centroid-max"
+                            id="distance_to_nearest_road_from_centroid-max" class="form-control" placeholder="Max"
+                            style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                <!-- Road Frontage -->
+                <div class="col-md-2">
+                    <div class="road_frontage-div container">
+
+                        <label for="road_frontage-min">Road Frontage</label>
+
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-road_frontage" data-field="road_frontage">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+
+                        <input type="number" name="road_frontage-min" id="road_frontage-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="road_frontage-max" id="road_frontage-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                <!-- Trees Percentage -->
+                <div class="col-md-2">
+                    <div class="trees_percentage-div container">
+
+                        <label for="trees_percentage-min">Trees Percentage</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-trees_percentage" data-field="trees_percentage">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+
+                        <input type="number" name="trees_percentage-min" id="trees_percentage-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="trees_percentage-max" id="trees_percentage-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                <!-- Built Percentage -->
+                <div class="col-md-2">
+                    <div class="built_percentage-div container">
+
+                        <label for="built_percentage-min">Built Percentage</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-built_percentage" data-field="built_percentage">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+
+                        <input type="number" name="built_percentage-min" id="built_percentage-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="built_percentage-max" id="built_percentage-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                <!-- Grass Percentage -->
+                <div class="col-md-2">
+                    <div class="grass_percentage-div container">
+
+                        <label for="grass_percentage-min">Grass Percentage</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-grass_percentage" data-field="grass_percentage">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+                        <input type="number" name="grass_percentage-min" id="grass_percentage-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="grass_percentage-max" id="grass_percentage-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                <!-- Crops Percentage -->
+                <div class="col-md-2">
+                    <div class="crops_percentage-div container">
+
+                        <label for="crops_percentage-min">Crops Percentage</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-crops_percentage" data-field="crops_percentage">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+                        <input type="number" name="crops_percentage-min" id="crops_percentage-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="crops_percentage-max" id="crops_percentage-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                <!-- Shrub and Scrub Percentage -->
+                <div class="col-md-2">
+                    <div class="shrub_and_scrub_percentage-div container">
+
+                        <label for="shrub_and_scrub_percentage-min">Shrub and Scrub Percentage</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-shrub_and_scrub_percentage" data-field="shrub_and_scrub_percentage">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+                        <input type="number" name="shrub_and_scrub_percentage-min" id="shrub_and_scrub_percentage-min"
+                            class="form-control" placeholder="Min" style="width: 100%;">
+                        <input type="number" name="shrub_and_scrub_percentage-max" id="shrub_and_scrub_percentage-max"
+                            class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                <!-- Bare Percentage -->
+                <div class="col-md-2">
+                    <div class="bare_percentage-div container">
+
+                        <label for="bare_percentage-min">Bare Percentage</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-bare_percentage" data-field="bare_percentage">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+                        <input type="number" name="bare_percentage-min" id="bare_percentage-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="bare_percentage-max" id="bare_percentage-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                <!-- Water Percentage -->
+                <div class="col-md-2">
+                    <div class="water_percentage-div container">
+
+                        <label for="water_percentage-min">Water Percentage</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-water_percentage" data-field="water_percentage">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+                        <input type="number" name="water_percentage-min" id="water_percentage-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="water_percentage-max" id="water_percentage-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                <!-- Flooded Vegetation Percentage -->
+                <div class="col-md-2">
+                    <div class="flooded_vegetation_percentage-div container">
+
+                        <label for="flooded_vegetation_percentage-min">Flooded Vegetation Percentage</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-flooded_vegetation_percentage" data-field="flooded_vegetation_percentage">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+                        <input type="number" name="flooded_vegetation_percentage-min"
+                            id="flooded_vegetation_percentage-min" class="form-control" placeholder="Min"
+                            style="width: 100%;">
+                        <input type="number" name="flooded_vegetation_percentage-max"
+                            id="flooded_vegetation_percentage-max" class="form-control" placeholder="Max"
+                            style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                <!-- Snow and Ice Percentage -->
+                <div class="col-md-2">
+                    <div class="snow_and_ice_percentage-div container">
+
+                        <label for="snow_and_ice_percentage-min">Snow and Ice Percentage</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-snow_and_ice_percentage" data-field="snow_and_ice_percentage">
+                            <label class="form-check-label" for="include-null-snow_and_ice_percentage">Include Null</label>
+                        </div>
+                        <input type="number" name="snow_and_ice_percentage-min" id="snow_and_ice_percentage-min"
+                            class="form-control" placeholder="Min" style="width: 100%;">
+                        <input type="number" name="snow_and_ice_percentage-max" id="snow_and_ice_percentage-max"
+                            class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                <!-- Parcel Area -->
+                <div class="col-md-2">
+                    <div class="parcel_area-div container">
+
+                        <label for="parcel_area-min">Parcel Area</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-parcel_area" data-field="parcel_area">
+                            <label class="form-check-label" for="include-null-parcel_area">Include Null</label>
+                        </div>
+                        <input type="number" name="parcel_area-min" id="parcel_area-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="parcel_area-max" id="parcel_area-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                <!-- Largest Rectangle Area -->
+                <div class="col-md-2">
+                    <div class="largest_rect_area-div container">
+
+                        <label for="largest_rect_area-min">Largest Rectangle Area</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-largest_rect_area" data-field="largest_rect_area">
+                            <label class="form-check-label" for="include-null-largest_rect_area">Include Null</label>
+                        </div>
+                        <input type="number" name="largest_rect_area-min" id="largest_rect_area-min"
+                            class="form-control" placeholder="Min" style="width: 100%;">
+                        <input type="number" name="largest_rect_area-max" id="largest_rect_area-max"
+                            class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                <!-- Percent Rectangle -->
+                <div class="col-md-2">
+                    <div class="percent_rectangle-div container">
+
+                        <label for="percent_rectangle-min">Percent Rectangle</label>
+                         <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-percent_rectangle" data-field="percent_rectangle">
+                            <label class="form-check-label" for="include-null-percent_rectangle">Include Null</label>
+                        </div>
+                        <input type="number" name="percent_rectangle-min" id="percent_rectangle-min"
+                            class="form-control" placeholder="Min" style="width: 100%;">
+                        <input type="number" name="percent_rectangle-max" id="percent_rectangle-max"
+                            class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                <!-- Largest Square Area -->
+                <div class="col-md-2">
+                    <div class="largest_square_area-div container">
+
+                        <label for="largest_square_area-min">Largest Square Area</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-largest_square_area" data-field="largest_square_area">
+                            <label class="form-check-label" for="include-null-largest_square_area">Include Null</label>
+                        </div>
+                        <input type="number" name="largest_square_area-min" id="largest_square_area-min"
+                            class="form-control" placeholder="Min" style="width: 100%;">
+                        <input type="number" name="largest_square_area-max" id="largest_square_area-max"
+                            class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                <!-- Percent Square -->
+                <div class="col-md-2">
+                    <div class="percent_square-div container">
+
+                        <label for="percent_square-min">Percent Square</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-percent_square" data-field="percent_square">
+                            <label class="form-check-label" for="include-null-percent_square">Include Null</label>
+                        </div>
+                        <input type="number" name="percent_square-min" id="percent_square-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="percent_square-max" id="percent_square-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                <!-- Largest Rectangle Area Cleaned -->
+                <div class="col-md-2">
+                    <div class="largest_rect_area_cleaned-div container">
+
+                        <label for="largest_rect_area_cleaned-min">Largest Rectangle Area Cleaned</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-largest_rect_area_cleaned" data-field="largest_rect_area_cleaned">
+                            <label class="form-check-label" for="include-null-largest_rect_area_cleaned">Include Null</label>
+                        </div>
+                        <input type="number" name="largest_rect_area_cleaned-min" id="largest_rect_area_cleaned-min"
+                            class="form-control" placeholder="Min" style="width: 100%;">
+                        <input type="number" name="largest_rect_area_cleaned-max" id="largest_rect_area_cleaned-max"
+                            class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+
+                <!-- Largest Square Area Cleaned -->
+                <div class="col-md-2">
+                    <div class="largest_square_area_cleaned-div container">
+
+                        <label for="largest_square_area_cleaned-min">Largest Square Area Cleaned</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-largest_square_area_cleaned" data-field="largest_square_area_cleaned">
+                            <label class="form-check-label" for="include-null-largest_square_area_cleaned">Include Null</label>
+                        </div>
+                        <input type="number" name="largest_square_area_cleaned-min" id="largest_square_area_cleaned-min"
+                            class="form-control" placeholder="Min" style="width: 100%;">
+                        <input type="number" name="largest_square_area_cleaned-max" id="largest_square_area_cleaned-max"
+                            class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+                </div>
+                <!-- Clay -->
+                <div class="col-md-2">
+                    <div class="clay-div container">
+                        <label for="clay-min">Clay</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-clay" data-field="clay">
+                            <label class="form-check-label" for="include-null-clay">Include Null</label>
+                        </div>
+                        <input type="number" name="clay-min" id="clay-min" class="form-control" placeholder="Min"
+                            style="width: 100%;">
+                        <input type="number" name="clay-max" id="clay-max" class="form-control" placeholder="Max"
+                            style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+                <!-- Clay_loam -->
+                <div class="col-md-2">
+                    <div class="clay_loam-div container">
+                        <label for="clay_loam-min">Clay_loam</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-clay_loam" data-field="clay_loam">
+                            <label class="form-check-label" for="include-null-clay_loam">Include Null</label>
+                        </div>
+                        <input type="number" name="clay_loam-min" id="clay_loam-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="clay_loam-max" id="clay_loam-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+                <!-- Coarse_sand -->
+                <div class="col-md-2">
+                    <div class="coarse_sand-div container">
+                        <label for="coarse_sand-min">Coarse_sand</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-coarse_sand" data-field="coarse_sand">
+                            <label class="form-check-label" for="include-null-coarse_sand">Include Null</label>
+                        </div>
+                        <input type="number" name="coarse_sand-min" id="coarse_sand-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="coarse_sand-max" id="coarse_sand-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+
+                <!-- Coarse_sandy_loam -->
+                <div class="col-md-2">
+                    <div class="coarse_sandy_loam-div container">
+                        <label for="coarse_sandy_loam-min">Coarse_sandy_loam</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-coarse_sandy_loam" data-field="coarse_sandy_loam">
+                            <label class="form-check-label" for="include-null-coarse_sandy_loam">Include Null</label>
+                        </div>
+                        <input type="number" name="coarse_sandy_loam-min" id="coarse_sandy_loam-min"
+                            class="form-control" placeholder="Min" style="width: 100%;">
+                        <input type="number" name="coarse_sandy_loam-max" id="coarse_sandy_loam-max"
+                            class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+                <!-- Fine_sand -->
+                <div class="col-md-2">
+                    <div class="fine_sand-div container">
+                        <label for="fine_sand-min">Fine_sand</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-fine_sand" data-field="fine_sand">
+                            <label class="form-check-label" for="include-null-fine_sand">Include Null</label>
+                        </div>
+                        <input type="number" name="fine_sand-min" id="fine_sand-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="fine_sand-max" id="fine_sand-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+                <!-- Fine_sandy_loam -->
+                <div class="col-md-2">
+                    <div class="fine_sandy_loam-div container">
+                        <label for="fine_sandy_loam-min">Fine_sandy_loam</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-fine_sandy_loam" data-field="fine_sandy_loam">
+                            <label class="form-check-label" for="include-null-fine_sandy_loam">Include Null</label>
+                        </div>
+                        <input type="number" name="fine_sandy_loam-min" id="fine_sandy_loam-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="fine_sandy_loam-max" id="fine_sandy_loam-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+             
+                <!-- Loam -->
+                <div class="col-md-2">
+                    <div class="loam-div container">
+                        <label for="loam-min">Loam</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-loam" data-field="loam">
+                            <label class="form-check-label" for="include-null-loam">Include Null</label>
+                        </div>
+                        <input type="number" name="loam-min" id="loam-min" class="form-control" placeholder="Min"
+                            style="width: 100%;">
+                        <input type="number" name="loam-max" id="loam-max" class="form-control" placeholder="Max"
+                            style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+                <!-- Loamy_coarse_sand -->
+                <div class="col-md-2">
+                    <div class="loamy_coarse_sand-div container">
+                        <label for="loamy_coarse_sand-min">Loamy_coarse_sand</label>
+                         <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-loamy_coarse_sand" data-field="loamy_coarse_sand">
+                            <label class="form-check-label" for="include-null-loamy_coarse_sand">Include Null</label>
+                        </div>
+                        <input type="number" name="loamy_coarse_sand-min" id="loamy_coarse_sand-min"
+                            class="form-control" placeholder="Min" style="width: 100%;">
+                        <input type="number" name="loamy_coarse_sand-max" id="loamy_coarse_sand-max"
+                            class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+
+                <!-- Loamy_fine_sand -->
+                <div class="col-md-2">
+                    <div class="loamy_fine_sand-div container">
+                        <label for="loamy_fine_sand-min">Loamy_fine_sand</label>
+                         <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-loamy_fine_sand" data-field="loamy_fine_sand">
+                            <label class="form-check-label" for="include-null-loamy_fine_sand">Include Null</label>
+                        </div>
+                        <input type="number" name="loamy_fine_sand-min" id="loamy_fine_sand-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="loamy_fine_sand-max" id="loamy_fine_sand-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+
+                <!-- Loamy_sand -->
+                <div class="col-md-2">
+                    <div class="loamy_sand-div container">
+                        <label for="loamy_sand-min">Loamy_sand</label>
+                         <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-loamy_sand" data-field="loamy_sand">
+                            <label class="form-check-label" for="include-null-loamy_sand">Include Null</label>
+                        </div>
+                        <input type="number" name="loamy_sand-min" id="loamy_sand-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="loamy_sand-max" id="loamy_sand-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+                <!-- Num_buildings -->
+                <div class="col-md-2">
+                    <div class="num_buildings-div container">
+                        <label for="num_buildings-min">Num_buildings</label>
+                          <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-num_buildings" data-field="num_buildings">
+                            <label class="form-check-label" for="include-null-num_buildings">Include Null</label>
+                        </div>
+                        <input type="number" name="num_buildings-min" id="num_buildings-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="num_buildings-max" id="num_buildings-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+
+                <!-- Percent_rectangle_area_cleaned -->
+                <div class="col-md-2">
+                    <div class="percent_rectangle_area_cleaned-div container">
+                        <label for="percent_rectangle_area_cleaned-min">Percent_rectangle_area_cleaned</label>
+                          <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-percent_rectangle_area_cleaned" data-field="percent_rectangle_area_cleaned">
+                            <label class="form-check-label" for="include-null-percent_rectangle_area_cleaned">Include Null</label>
+                        </div>
+                        <input type="number" name="percent_rectangle_area_cleaned-min"
+                            id="percent_rectangle_area_cleaned-min" class="form-control" placeholder="Min"
+                            style="width: 100%;">
+                        <input type="number" name="percent_rectangle_area_cleaned-max"
+                            id="percent_rectangle_area_cleaned-max" class="form-control" placeholder="Max"
+                            style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+
+               
+
+                <!-- Sand -->
+                <div class="col-md-2">
+                    <div class="sand-div container">
+                        <label for="sand-min">Sand</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-sand" data-field="sand">
+                            <label class="form-check-label" for="include-null-sand">Include Null</label>
+                        </div>
+                        <input type="number" name="sand-min" id="sand-min" class="form-control" placeholder="Min"
+                            style="width: 100%;">
+                        <input type="number" name="sand-max" id="sand-max" class="form-control" placeholder="Max"
+                            style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+
+
+                <!-- Sandy_clay -->
+                <div class="col-md-2">
+                    <div class="sandy_clay-div container">
+                        <label for="sandy_clay-min">Sandy_clay</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-sandy_clay" data-field="sandy_clay">
+                            <label class="form-check-label" for="include-null-sandy_clay">Include Null</label>
+                        </div>
+                        <input type="number" name="sandy_clay-min" id="sandy_clay-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="sandy_clay-max" id="sandy_clay-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+                <!-- Sandy_clay_loam -->
+                <div class="col-md-2">
+                    <div class="sandy_clay_loam-div container">
+                        <label for="sandy_clay_loam-min">Sandy_clay_loam</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-sandy_clay_loam" data-field="sandy_clay_loam">
+                            <label class="form-check-label" for="include-null-sandy_clay_loam">Include Null</label>
+                        </div>
+                        <input type="number" name="sandy_clay_loam-min" id="sandy_clay_loam-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="sandy_clay_loam-max" id="sandy_clay_loam-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+                <!-- Sandy_loam -->
+                <div class="col-md-2">
+                    <div class="sandy_loam-div container">
+                        <label for="sandy_loam-min">Sandy_loam</label>
+                         <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-sandy_loam" data-field="sandy_loam">
+                            <label class="form-check-label" for="include-null-sandy_loam">Include Null</label>
+                        </div>
+                        <input type="number" name="sandy_loam-min" id="sandy_loam-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="sandy_loam-max" id="sandy_loam-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+                <!-- Silt_loam -->
+                <div class="col-md-2">
+                    <div class="silt_loam-div container">
+                        <label for="silt_loam-min">Silt_loam</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-silt_loam" data-field="silt_loam">
+                            <label class="form-check-label" for="include-null-silt_loam">Include Null</label>
+                        </div>
+                        <input type="number" name="silt_loam-min" id="silt_loam-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="silt_loam-max" id="silt_loam-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+
+                <!-- Silty_clay -->
+                <div class="col-md-2">
+                    <div class="silty_clay-div container">
+                        <label for="silty_clay-min">Silty_clay</label>
+                         <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-silty_clay" data-field="silty_clay">
+                            <label class="form-check-label" for="include-null-silty_clay">Include Null</label>
+                        </div>
+                        <input type="number" name="silty_clay-min" id="silty_clay-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="silty_clay-max" id="silty_clay-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+                <!-- Silty_clay_loam -->
+                <div class="col-md-2">
+                    <div class="silty_clay_loam-div container">
+                        <label for="silty_clay_loam-min">Silty_clay_loam</label>
+                          <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-silty_clay_loam" data-field="silty_clay_loam">
+                            <label class="form-check-label" for="include-null-silty_clay_loam">Include Null</label>
+                        </div>
+                        <input type="number" name="silty_clay_loam-min" id="silty_clay_loam-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="silty_clay_loam-max" id="silty_clay_loam-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+
+                <!-- Smallest_building -->
+                <div class="col-md-2">
+                    <div class="smallest_building-div container">
+                        <label for="smallest_building-min">Smallest_building</label>
+                          <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-smallest_building" data-field="smallest_building">
+                            <label class="form-check-label" for="include-null-smallest_building">Include Null</label>
+                        </div>
+                        <input type="number" name="smallest_building-min" id="smallest_building-min"
+                            class="form-control" placeholder="Min" style="width: 100%;">
+                        <input type="number" name="smallest_building-max" id="smallest_building-max"
+                            class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+                
+
+                <!-- Very_fine_sandy_loam -->
+                <div class="col-md-2">
+                    <div class="very_fine_sandy_loam-div container">
+                        <label for="very_fine_sandy_loam-min">Very_fine_sandy_loam</label>
+                         <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-very_fine_sandy_loam" data-field="very_fine_sandy_loam">
+                            <label class="form-check-label" for="include-null-very_fine_sandy_loam">Include Null</label>
+                        </div>
+                        <input type="number" name="very_fine_sandy_loam-min" id="very_fine_sandy_loam-min"
+                            class="form-control" placeholder="Min" style="width: 100%;">
+                        <input type="number" name="very_fine_sandy_loam-max" id="very_fine_sandy_loam-max"
+                            class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
+                    </div>
+                </div>
+
+            </div>
+
+
+    </div>
+
+    </form>
+
+
+    <div class="center">
+        <div class="row">
+            <div class="col">
+                <button type="button" id="property-count" class="property-count btn btn-primary btn-sm">Count
+                    Properties</button>
+            </div>
+            <div class="col">
+                <div class="container center" style="align-items: center; text-align: center;">
+                    <button type="submit" id="fetch-results" class="btn btn-success btn-sm">
+                        Fetch records
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="container" style="width: 100%;overflow-y: auto;">
+    <div id="content"></div>
+    <button style="display: none;" value="export" id="export">Export</button>
+</div>
+</div>
+
+
+
+
+
+<script type="text/javascript" src="/static/js/jquery-2.2.4.min.js"></script>
+<script type="text/javascript" src="/static/js/jquery.multi-select.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"
+    integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
+    integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+    crossorigin="anonymous"></script>
+<script type="text/javascript">
+
+    var select_type_fields = {
+        "state": "Property_State_Name",
+        "county": "Property_County_Name",
+        "city": "Property_City",
+        "property-access-type": "Access_Type",
+        "property-zip-codes-match": "Zip_Code_Matching",
+        "tree-coverage-select": "tree_coverage",
+        "wells-select": "well",
+        "owner-type-select": "Owner_Type",
+    }
+
+    var numeric_fields = {
+        "lot-acreage": "Lot_Acreage",
+        "floodzones": "Significant_Flood_Zones",
+        "wetlands": "Wetlands_Total",
+        "slopes": "slope_mean",
+    }
+
+    function formatOptionText(text) {
+        // Title case conversion using regular expression
+        return text.replace(/\w\S*/g, function (txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); });
+    }
+    function hideElementUsingClass(classValue) {
+        $("." + classValue).hide()
+    }
+
+    function showElementUsingClass(classValue) {
+        $("." + classValue).show()
+    }
+
+    var initialDataObject = {}; // Global variable to store initial data
+
+    var FormItemsChanged = [];
+
+    var global_states = []
+    var global_counties = []
+    var global_cities = []
+
+    function populateOwnerNameType() {
+    $.ajax({
+        url: '/get-owner-name-type',
+        method: 'GET',
+        dataType: 'json',
+        success: function (response) {
+            if (response && response.message === 'success' && response.data) {
+                let ownerNameTypeSelect = $('#owner-name-type');
+                
+                // Clear the existing options
+                ownerNameTypeSelect.empty();
+                
+                // Add the "All" option
+                ownerNameTypeSelect.append('<option value="all">All</option>');
+                
+                // Populate the select element with the fetched data
+                response.data.forEach(function (ownerNameType) {
+                    ownerNameTypeSelect.append(`<option value="${ownerNameType}">${ownerNameType}</option>`);
+                });
+
+                // Show the select field if it's hidden
+                ownerNameTypeSelect.show().parent().show().parent().show();
+            } else {
+                console.error('Failed to fetch owner name types:', response.message);
+            }
+        },
+        error: function (error) {
+            console.error('Error during the AJAX request:', error);
+        }
+    });
+}
+
+
+
+    function populateFilterFields() {
+        // Fetch filter values from "/get-filter-values"
+        $.ajax({
+            url: '/get-filter-values',
+            dataType: 'json',
+            success: function (response) {
+                if (response && response.data) {
+                    let selectFields = Object.keys(select_type_fields);
+                    let numberFields = Object.keys(numeric_fields);
+
+                    // Process each filter option
+                    Object.keys(response.data).forEach((key) => {
+                        let selectOptions = response.data[key];
+                        let selectField = $(`select#${key}`);
+
+                        // Handle select fields
+                        if (selectFields.includes(key) && !key.includes('zip')) {
+                            if (typeof selectOptions === 'object' && key === 'state') {
+                                // Populate state options
+                                selectField.empty().append('<option value="all">Select All</option>');
+                                Object.keys(selectOptions).forEach(state => {
+                                    selectField.append(`<option value="${state}">${state}</option>`);
+                                });
+
+                                selectField.show().parent().show().parent().show();
+
+                                // Handle state-specific logic
+                                selectField.on('change', function () {
+                                    let selectedStates = $(this).val();
+                                    let countySelectField = $('select#county');
+                                    let citySelectField = $('select#city');
+
+                                    countySelectField.empty().append('<option value="all">Select All</option>');
+                                    citySelectField.empty().append('<option value="all">Select All</option>');
+
+                                    if (Array.isArray(selectedStates) && selectedStates.length) {
+                                        selectedStates.forEach(state => {
+                                            if (state !== 'all' && selectOptions[state]) {
+                                                Object.keys(selectOptions[state]).forEach(county => {
+                                                    countySelectField.append(`<option value="${county}">${county}</option>`);
+                                                });
+                                            }
+                                        });
+                                    }
+
+                                    countySelectField.show().parent().show().parent().show();
+
+                                    // Handle county-specific logic
+                                    countySelectField.on('change', function () {
+                                        let selectedCounties = $(this).val();
+                                        citySelectField.empty().append('<option value="all">Select All</option>');
+
+                                        if (Array.isArray(selectedCounties) && selectedCounties.length) {
+                                            selectedStates.forEach(state => {
+                                                if (state !== 'all' && selectOptions[state]) {
+                                                    selectedCounties.forEach(county => {
+                                                        if (county !== 'all' && selectOptions[state][county]) {
+                                                            selectOptions[state][county].forEach(city => {
+                                                                citySelectField.append(`<option value="${city}">${city}</option>`);
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }
+
+                                        citySelectField.show().parent().show().parent().show();
+                                    });
+                                });
+                            } else if (Array.isArray(selectOptions)) {
+                                let availableOptions = [...new Set(selectOptions.map(option => option[1]))].map(option => [option, option]);
+
+                                selectField.empty().append('<option value="all">Select All</option>');
+
+                                availableOptions.forEach(([value, text]) => {
+                                    selectField.append(`<option value="${value}">${text}</option>`);
+                                });
+
+                                selectField.show().parent().show().parent().show();
+                            }
+                        }
+                        // Handle numeric fields
+                        else if (numberFields.includes(key) && !key.includes('price')) {
+                            let val = response.data[key] || {};
+                            let min = Math.floor(val.min) || 0;
+                            let max = Math.ceil(val.max) || 999999;
+
+                            let minInput = $(`input#${key}-min`);
+                            let maxInput = $(`input#${key}-max`);
+
+                            minInput.attr({
+                                'min': min,
+                                'max': max,
+                                'title': `Min: ${min}, Max: ${max}`,
+                            }).val(min).show().parent().show().parent().show();
+
+                            maxInput.attr({
+                                'min': min,
+                                'max': max,
+                                'title': `Min: ${min}, Max: ${max}`,
+                            }).val(max).show().parent().show().parent().show();
+                        }
+                        // Handle nearest_road_type field
+                        else if (key === 'nearest_road_types') {
+                            if (Array.isArray(selectOptions)) {
+                                let availableOptions = [...new Set(selectOptions.map(option => option))].map(option => [option, option]);
+
+                                selectField.empty().append('<option value="all">Select All</option>');
+
+                                availableOptions.forEach(([value, text]) => {
+                                    selectField.append(`<option value="${value}">${text}</option>`);
+                                });
+
+                                selectField.show().parent().show().parent().show();
+                            }
+                        } else {
+                            console.warn('Field not handled:', key);
+                        }
+                    });
+                } else {
+                    console.error('Response data is missing or invalid:', response);
+                }
+            },
+            error: function (error) {
+                console.error('Error fetching filter values:', error);
+            }
+        });
+    }
+
+    function populateNumericFilters() {
+        $.ajax({
+            url: '/get-numeric-filters',
+            method: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                if (data.message === 'success') {
+                    const results = data.data;
+                    let missed = [];
+
+                    $.each(results, function (key, value) {
+                        const $inputElement = $(`input[name="${key}"]`);
+
+
+                        if ($inputElement.length) {
+                            $inputElement.val(value);
+                        } else {
+                            // console.log($inputElement, " ", key);
+
+                            if (key === "significant_flood_zones-min") {
+                                console.log('pr$inputElement', key)
+                            }
+
+
+                            missed.push(key);
+                        }
+
+                    });
+                    console.log(missed);
+                } else {
+                    console.error('Failed to fetch numeric filter values:', data.message);
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error('Error fetching numeric filter values:', textStatus, errorThrown);
+            }
+        });
+    }
+
+    $(document).ready(function () {
+        populateNumericFilters();
+        populateOwnerNameType();
+
+        // hideElementUsingClass('property-state-div')
+        // hideElementUsingClass('property-county-div');
+        // hideElementUsingClass('property-city-div');
+        hideElementUsingClass('property-access-type-div');
+        hideElementUsingClass('property-zip-codes-match-div');
+        hideElementUsingClass('property-owner-do-not-mail-div');
+        hideElementUsingClass('lot-acreage-div');
+        hideElementUsingClass('market-price-div');
+        hideElementUsingClass('tree-coverage-div');
+        hideElementUsingClass('well-select-div');
+        hideElementUsingClass('owner-type-div');
+        hideElementUsingClass('floodzones-div');
+        hideElementUsingClass('wetlands-div');
+        hideElementUsingClass('slopes-div');
+        hideElementUsingClass('count-display');
+        $('#property-count').hide();
+        $('#fetch-results').hide();
+
+
+
+        console.info("called filter fields populator. showing btns");
+
+        $('#property-count').show();
+        $('#fetch-results').show();
+
+        populateFilterFields();
+
+        $('select').on('change', function () {
+            let name = $(this).attr('name')
+            FormItemsChanged.push(name)
+        })
+
+
+        $('input').on('change', function () {
+            let name = $(this).attr('name')
+            FormItemsChanged.push(name)
+        })
+
+        // Function to capture initial form data
+        function captureInitialData() {
+            var formData = $('#fetchRecordsForm').serializeArray();
+            $.each(formData, function (i, field) {
+                initialDataObject[field.name] = field.value;
+            });
+
+            console.log('initalformadata ', initialDataObject)
+        }
+
+        captureInitialData()
+
+        // Function to get changed fields
+    function getChangedFields() {
+    var formData = $('#fetchRecordsForm').serializeArray();
+    var fieldMap = {};
+
+    // Iterate through the serialized array and build the field map
+    $.each(formData, function (i, field) {
+        if (field.name && FormItemsChanged.includes(field.name) && !field.name.includes('price')) {
+
+            // Check if field is a multi-select or specific type field
+            if (select_type_fields.hasOwnProperty(field.name) || 
+                ['property-counties', 'property-states', 'property-cities', 'property-access-type', 'zip-code-matching', 'nearest_road_types', 'owner-name-type'].includes(field.name)) {
+
+                if (fieldMap.hasOwnProperty(field.name)) {
+                    fieldMap[field.name].push(field.value);
+                } else {
+                    fieldMap[field.name] = [];
+                    fieldMap[field.name].push(field.value);
+                }
+
+            } else if (field.name.includes('-min') || field.name.includes('-max')) {
+                let field_name = '';
+                if (field.name.includes('-min')) {
+                    field_name = field.name.replace(/-min$/, '');
+                    if (!fieldMap.hasOwnProperty(field_name)) {
+                        fieldMap[field_name] = {};
+                    }
+                    fieldMap[field_name]['min'] = field.value;
+                } else if (field.name.includes('-max')) {
+                    field_name = field.name.replace(/-max$/, '');
+                    if (!fieldMap.hasOwnProperty(field_name)) {
+                        fieldMap[field_name] = {};
+                    }
+                    fieldMap[field_name]['max'] = field.value;
+                }
+            } else {
+                fieldMap[field.name] = field.value;
+            }
+        }
+    });
+
+    // Add logic to include/exclude null values
+    $('.include-null-checkbox').each(function() {
+        var fieldName = $(this).data('field');
+        if ($(this).is(':checked')) {
+            fieldMap[fieldName + '-include-null'] = true;
+        } else {
+            fieldMap[fieldName + '-include-null'] = false;
+        }
+    });
+
+    console.log(fieldMap);
+    return fieldMap;
+}
+
+
+        $("button.property-count").click(function () {
+            console.log("property count clicked");
+            var dataObject = getChangedFields();
+            console.log('Changed dataObject', dataObject);
+
+            // Show the spinner and blur the page
+            // $('#spinner-overlay').css('display', 'flex');
+            // $('body').addClass('blur');
+
+
+            $.ajax({
+                url: '/query-count',
+                type: 'POST',
+                data: JSON.stringify(dataObject),
+                contentType: 'application/json',
+                success: function (response) {
+                    // console.log(response);
+
+                    if (response && typeof response == 'object' && response.hasOwnProperty('message') && response.hasOwnProperty('count') && response.message.toString().toLowerCase() == 'success' && typeof response.count == 'object' && response.count.hasOwnProperty('all_rows') && response.count.hasOwnProperty('distinct_owners')) {
+                        console.log(response.count)
+                        let count = response.count;
+                        console.log('success')
+                        $('.count-rows').empty()
+                        $('.count-rows').append(`<span><b>No. of Properties: </b>${count.all_rows}</span>`)
+                        $('.count-owners').empty()
+                        $('.count-owners').append(`<span><b>No. of Distinct Owners: </b>${count.distinct_owners}</span>`)
+
+                        showElementUsingClass('count-display');
+                    } else {
+                        console.error(response);
+                        console.error(response.count.hasOwnProperty('all_rows'));
+                        console.error(response.count.hasOwnProperty('distinct_owners'));
+                        hideElementUsingClass('count-display');
+                    }
+                    $('#spinner-overlay').css('display', 'none');
+
+
+                },
+                error: function (error) {
+                    console.error('Error fetching counts:', error);
+                    $('#spinner-overlay').css('display', 'none');
+
+                }
+            })
+        });
+
+        $('#fetch-results').click(function () {
+            // send ajax request to export_data URL
+
+            var dataObject = getChangedFields();
+            console.log('Changed dataObject', JSON.stringify(dataObject));
+            $('#spinner-overlay').css('display', 'flex');
+
+            $.ajax({
+                url: '/get-records',
+                type: 'POST',
+                data: JSON.stringify(dataObject),
+                contentType: 'application/json',
+                success: function (response) {
+
+                    $('#spinner-overlay').css('display', 'none');
+                    // $('#content').html(response.html);
+                    //  $('button#export').prop('disabled', false);
+                    // $('button#export').css('display', 'flex');
+
+                    //$('button#export').on('click', function () {
+                    //  console.log('export data object ', dataObject);
+
+                    // $.ajax({
+                    //   url: "/start-export-records",
+                    // type: 'POST',
+                    //data: JSON.stringify(dataObject),
+                    //contentType: 'application/json',
+                    //success: function (response) {
+                    //   console.log(response)
+
+                    //},
+                    //error: function (error) {
+                    //  console.error(error);
+                    //console.error(' while exporting records');
+                    //}
+                    //})
+                    //})
+
+                    // Handle success
+                    window.location.href = '/view-records';  // Redirect on success
+
+                },
+                error: function (error) {
+                    console.error('Error submitting form:', error);
+                    $('#spinner-overlay').css('display', 'none');
+
+                }
+            });
+
+            // $(this).prop('disabled', true);  //Disable the button
+            // setTimeout(function () {
+            //     $('#fetch-results').prop('disabled', false);  //Enable the button after 3 hours
+            // }, 3 * 60 * 60 * 1000);  //3 hours in milliseconds
+        });
+
+
+
+
+    });
+</script>
+
+{% endblock %}

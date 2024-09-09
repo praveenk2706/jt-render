@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block title %}Fetched Records{% endblock %}
+
+{% block body %}
+
+{% with messages = get_flashed_messages(with_categories=True) %}
+    {% if messages %}
+        <ul class="flash-messages">
+            {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endwith %}
+
+<div class="h1">Fetched Records: Paginated</div><br>
+
+<div class="container-fluid" style="font-size: 12px !important;">
+    {{ data | safe }}
+</div>
+
+<!-- Pagination -->
+<div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
+    <div class="btn-group mr-2" role="group" aria-label="First group">
+        {% if prev %}
+        <a href="{{ url_for('view_records') }}?page={{page-1}}" class="btn btn-outline-danger btn-lg mx-2">
+            &lt;&lt; Prev</a>
+        {% endif %}
+
+        {% if next %}
+        <a href="{{ url_for('view_records') }}?page={{page+1}}" class="btn btn-outline-danger btn-lg mx-2">Next
+            &gt;&gt;</a>
+        {% endif %}
+    </div>
+    <div class="btn-group mr-2" role="group" aria-label="Second group">
+        <button type="button" class="btn btn-primary btn-lg" id="export-data-btn">Export Data</button>
+    </div>
+</div>
+
+<!-- Modal for Export Data -->
+<div class="modal fade" id="exportModal" tabindex="-1" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportModalLabel">Export Data</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="export-form">
+                    <div class="form-group">
+                        <label for="campaign-name">Campaign Name</label>
+                        <input type="text" class="form-control" id="campaign-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="mail-groups">Mail Groups</label>
+                        <input type="text" class="form-control" id="mail-groups" placeholder="Enter mail group names">
+                        <small class="form-text text-muted">Press Enter to add each mail group as a chip.</small>
+                        <div id="mail-group-chips" class="mt-2"></div>
+                    </div>
+                    <!-- Market Price Inputs in One Row -->
+                   <div class="form-group">
+                        <label class="d-block">Market Price</label>
+                        <div class="form-row">
+                            <div class="col">
+                                <input type="number" class="form-control" id="market-price-min" step="0.01" placeholder="Min" aria-label="Min Market Price">
+                            </div>
+                            <div class="col">
+                                <input type="number" class="form-control" id="market-price-max" step="0.01" placeholder="Max" aria-label="Max Market Price">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Optional: Adjust column sizes as needed -->
+                    <!--
+                    <div class="form-group row">
+                        <label for="market-price" class="col-sm-2 col-form-label">Market Price</label>
+                        <div class="col-sm-5">
+                            <input type="number" class="form-control" id="market-price-min" step="0.01" placeholder="Min" required>
+                        </div>
+                        <div class="col-sm-5">
+                            <input type="number" class="form-control" id="market-price-max" step="0.01" placeholder="Max" required>
+                        </div>
+                    </div>
+                    -->
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Bootstrap JS -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        var mailGroups = [];
+
+        // Show the modal when the export button is clicked
+        $('#export-data-btn').click(function () {
+            $('#exportModal').modal('show');
+        });
+
+        // Add mail group chip on Enter key press
+        $('#mail-groups').on('keypress', function (e) {
+            if (e.which === 13) {  // Enter key pressed
+                e.preventDefault();
+                var mailGroup = $(this).val().trim();
+                if (mailGroup !== "") {
+                    mailGroups.push(mailGroup);
+                    $('#mail-group-chips').append('<span class="badge badge-secondary mx-1">' + mailGroup + '</span>');
+                    $(this).val('');
+                }
+            }
+        });
+
+        // Handle form submission
+        $('#export-form').submit(function (e) {
+            e.preventDefault();
+            var campaignName = $('#campaign-name').val();
+            var marketPriceMin = $('#market-price-min').val();
+            var marketPriceMax = $('#market-price-max').val();
+
+            // Validate Market Price inputs
+            if (parseFloat(marketPriceMin) > parseFloat(marketPriceMax)) {
+                alert('Market Price Min cannot be greater than Market Price Max.');
+                return;
+            }
+
+            if (campaignName && mailGroups.length > 0 && (marketPriceMin || marketPriceMax)) {
+                // Example: Initiating download
+                var exportUrl = `/export-records?query=your_query_here&mailGroups=${encodeURIComponent(mailGroups.join(','))}&marketPriceMin=${encodeURIComponent(marketPriceMin)}&marketPriceMax=${encodeURIComponent(marketPriceMax)}`;
+
+                var link = document.createElement('a');
+                link.href = exportUrl;
+                link.download = 'records.zip'; // Suggested filename for the downloaded file
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // Close the modal after submission
+                $('#exportModal').modal('hide');
+            } else {
+                alert('Please fill out all fields.');
+            }
+        });
+    });
+</script>
+
+{% endblock %}

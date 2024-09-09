@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload File{% endblock %}
+
+{% block body %}
+<div class="container" style="text-align: center;">
+    <h1>Upload the CSV file processed by the Mail House</h1>
+    <form method="post" enctype="multipart/form-data">
+        <input type="file" name="file"><br><br>
+        <input type="submit" value="Upload">
+    </form>
+</div>
+{% endblock %}

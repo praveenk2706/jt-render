@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}Dropdown test{% endblock %}
+
+{% block body %}
+<div class="container" style="width: 100%;">
+    <div class="location-filters row">
+        <div class="col">
+            <div class="row">
+                <label for="state">
+                    Property State Name:
+                </label>
+            </div>
+            <div class="row">
+                <select id="state" multiple size="5" name="state">
+                    <option value="all">All States</option>
+                </select>
+            </div>
+        </div>
+        <div class="col">
+            <div class="row">
+                <label for="county">
+                    Property County Name:
+                </label>
+            </div>
+            <div class="row">
+                <select id="county" multiple size="5" disabled name="county">
+                    <!-- <option value="all">Select All</option> -->
+                </select>
+            </div>
+        </div>
+        <div class="col">
+            <div class="row">
+                <label for="city">
+                    Property City Name:
+                </label>
+            </div>
+            <div class="row">
+                <select id="city" multiple size="5" disabled name="city">
+                    <!-- <option value="all">Select All</option> -->
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="/static/js/jquery-2.2.4.min.js"></script>
+<script>
+    function formatOptionText(text) {
+        // Title case conversion using regular expression
+        return text.replace(/\w\S*/g, function (txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); });
+    }
+    $(document).ready(function () {
+        // Fetch location data from "/get-location-filters"
+        let data = null;
+        $.ajax({
+            url: "/get-location-filters",
+            dataType: "json",
+            success: function (response) {
+                if (response && typeof response === 'object' && !Array.isArray(response) && response.hasOwnProperty('message') && response.message != undefined && response.message != null && typeof response.message == 'string' && response.message.toString().toLowerCase() == 'success' && response.hasOwnProperty('data') && response.data != undefined && response.data != null && typeof response.data === 'object') {
+                    console.log("response\n", response.data)
+                    data = response.data;
+
+                    populateStates(data);
+                } else {
+                    console.error(response)
+                }
+
+
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("Error fetching location data:", textStatus, errorThrown);
+            }
+        });
+
+        function populateStates(data) {
+            var stateSelect = $("#state");
+            $.each(data, function (stateName, counties) {
+                stateSelect.append($("<option></option>", {
+                    text: formatOptionText(stateName),
+                    value: stateName
+                }));
+            });
+
+            // if (data && Object.keys(data).length) {
+            //     stateSelect.prepend($("<option></option>", {
+            //         text: formatOptionText('All States'),
+            //         value: 'all'
+            //     }));
+
+            // }
+            updateCountyOptions(); // Update counties based on initial state selection
+
+        }
+
+        function updateCountyOptions() {
+            var selectedStates = $("#state option:selected").map(function () { return $(this).val(); }).toArray();
+            // console.log(selectedStates)
+
+            if (selectedStates && Array.isArray(selectedStates) && selectedStates.includes('all')) {
+                selectedStates = Object.keys(data);
+            }
+            var countySelect = $("#county").empty().prop("disabled", selectedStates.length === 0);
+
+            if (selectedStates.length > 0) {
+                var allCounties = {};
+                $.each(selectedStates, function (index, state) {
+                    $.each(data[state], function (countyName, cities) {
+                        allCounties[countyName] = true;
+                    });
+                });
+                $.each(allCounties, function (countyName) {
+                    countySelect.append($("<option></option>", {
+                        text: formatOptionText(countyName),
+                        value: countyName
+                    }));
+                });
+                if (Object.keys(allCounties).length) {
+                    countySelect.prepend($("<option></option>", {
+                        text: 'All Counties',
+                        value: 'all'
+                    }))
+                }
+                updateCityOptions(); // Update cities based on initial county selection
+            }
+        }
+
+        function updateCityOptions() {
+            var selectedStates = $("#state option:selected").map(function () { return $(this).val(); }).toArray();
+            var selectedCounties = $("#county option:selected").map(function () { return $(this).val(); }).toArray();
+            var citySelect = $("#city").empty().prop("disabled", selectedCounties.length === 0);
+
+            if (selectedCounties.length > 0) {
+                var allCities = {};
+                $.each(selectedStates, function (index, state) {
+                    $.each(selectedCounties, function (index, county) {
+                        $.each(data[state][county], function (cityIndex, cityName) {
+                            if (cityName) { // Exclude null city values
+                                allCities[cityName] = true;
+                            }
+                        });
+                    });
+                });
+                $.each(allCities, function (cityName) {
+                    citySelect.append($("<option></option>", {
+                        text: formatOptionText(cityName),
+                        value: cityName
+                    }));
+                });
+
+                if (Object.keys(allCities).length) {
+                    citySelect.prepend($("<option></option>", {
+                        text: 'All Cities',
+                        value: 'all'
+                    }))
+                }
+            }
+        }
+
+        // Handle state selection change
+        $("#state").on("change", function () {
+            console.log('state changed')
+            updateCountyOptions();
+        });
+
+        // Handle county selection change
+        $("#county").on("change", function () {
+            updateCityOptions();
+        });
+
+        // Handle "Select All" and "Deselect All" options
+        $("select#state").on("change", function () {
+            var selectedOptions = $(this).val();
+            if (selectedOptions.includes("all")) {
+                $(this).children("option").prop("selected", true); // Select all
+            } else {
+                $(this).children("option[value='all']").prop("selected", false); // Deselect "all"
+            }
+        });
+
+        $("select#county").on("change", function () {
+            var selectedOptions = $(this).val();
+            if (selectedOptions.includes("all")) {
+                $(this).children("option").prop("selected", true); // Select all
+            } else {
+                $(this).children("option[value='all']").prop("selected", false); // Deselect "all"
+            }
+        });
+
+        $("select#city").on("change", function () {
+            var selectedOptions = $(this).val();
+            if (selectedOptions.includes("all")) {
+                $(this).children("option").prop("selected", true); // Select all
+            } else {
+                $(this).children("option[value='all']").prop("selected", false); // Deselect "all"
+            }
+        });
+    });
+
+
+</script>
+{% endblock %}

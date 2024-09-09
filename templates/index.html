@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Mail{% endblock %}
+
+{% block body %}
+<div class="jumbotron" style="background-color: beige;">
+    <div class="container" style="text-align: center; font-size: larger; font-weight: bolder;">
+        <p>Olmstead Properties Mailer</p>
+    </div>
+</div>
+<div class="container" style="text-align: center;">
+    <div class="row">
+        <div class="col">
+            <button type="submit" style="background-color: rgb(96, 145, 48);">
+                <a href="/query-db" target="_blank" style="color: whitesmoke; font-size: larger;font-weight: bolder;">
+                    Fetch Records
+                </a>
+            </button>
+        </div>
+        <div class="col">
+            <button type="submit" style="background-color: blue;">
+                <a href="/upload" target="_blank"
+                    style="color: whitesmoke;font-size: larger;font-weight: bolder;">Upload CSV</a>
+            </button>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="/static/js/jquery-2.2.4.min.js"></script>
+<script type="text/javascript">
+
+    $(document).ready(function () {
+
+
+    });
+
+</script>
+{% endblock %}
