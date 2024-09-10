@@ -964,6 +964,8 @@ def fetch_records():
         filters = {}
         null_checks = []
 
+        print(request_body)
+
         for key, value in request_body.items():
             if key.endswith("-include-null"):
                 field_name = key.replace("-include-null", "")
