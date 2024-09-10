@@ -892,6 +892,7 @@ def export_records():
                     "Owner_Last_Name": "first",
                     "Owner_First_Name": "first",
                     "Owner_Short_Name": "first",
+                    "Owner_Name_Type": "first",
                 }
             )
             .reset_index()
