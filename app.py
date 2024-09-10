@@ -790,7 +790,7 @@ def export_records():
         #     ["Owner_ID", "Property_State_Name", "Property_County_Name"]
         # ).apply(lambda x: x.reset_index(drop=True))
 
-        # print(grouped_df.columns)
+        print(list(grouped_df.columns))
 
         # Step 5: Assign control numbers
         grouped_df = assign_control_numbers(grouped_df)
