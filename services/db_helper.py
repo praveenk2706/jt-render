@@ -174,6 +174,8 @@ class BigQueryFetcher:
                 + "ORDER BY Property_State_Name, Property_County_Name, Property_City, Nearest_Road_Type"
             )
 
+            print(query)
+
             # Execute the query  into a Pandas DataFrame
             result_df = self.runQuery(queryString=query)
 
@@ -511,14 +513,14 @@ class CustomQueryBuilder:
                 if len(list_els) == 1:
                     if "true" in list_els:
                         return (
-                           """(Property_Zip_Code = Mail_Zip_Code """
+                            """(Property_Zip_Code = Mail_Zip_Code """
                             + """OR Property_Zip_Code = Mail_Zip_Code_9 """
                             + """OR Property_Zip_Code = Mail_Zip_Code_R """
                             + """OR Property_Zip_Code = Mail_ZipCode_STD) """
                         )
                     else:
                         return (
-                           """(Property_Zip_Code != Mail_Zip_Code """
+                            """(Property_Zip_Code != Mail_Zip_Code """
                             + """AND Property_Zip_Code != Mail_Zip_Code_9 """
                             + """AND Property_Zip_Code != Mail_Zip_Code_R """
                             + """AND Property_Zip_Code != Mail_ZipCode_STD) """

@@ -83,27 +83,7 @@ CLOUD_STORAGE_CLIENT = CloudStorageHelper(store_location="Received_From_Mail_Hou
 @app.route("/", methods=["GET"])
 def index():
     # os.system('clear')
-
-    # df = load_df()
-    # print(df.columns)
-    # filter_options = generate_filter_options(df)
-
-    # print(filter_options)
-
     return render_template("index.html")
-
-
-# @app.route("/get-filter-values", methods=["GET", "POST"])
-# def get_filter_values():
-#     try:
-#         filter_options = generate_filter_options(df)
-
-#         return jsonify({"message": "success", "data": filter_options})
-
-#     except Exception as e:
-#         print(f"Exception {e} while getting filter values")
-#         traceback.print_exc()
-#         return jsonify({"message": "failed", "error": str(e)})
 
 
 @app.route("/get-owner-name-type", methods=["GET"])
@@ -169,106 +149,6 @@ def get_filter_values():
         print(f"Exception {e} while getting filter values")
         traceback.print_exc()
         return jsonify({"message": "failed", "error": str(e)})
-
-
-# @app.route("/get-counts", methods=["POST"])
-# def counter():
-#     try:
-#         request_body = request.get_json(silent=True)
-#         print("request body")
-#         print(request_body)
-
-#         df = load_df()
-
-#         filtered_df = apply_filters(df=df, filter_dict=request_body)
-
-#         # Get the total number of rows and distinct Owner_ID values
-#         total_rows = len(filtered_df)
-#         total_distinct_owner_id = filtered_df["Owner_ID"].nunique()
-
-#         return jsonify(
-#             {
-#                 "message": "success",
-#                 "count": {
-#                     "all_rows": total_rows,
-#                     "distinct_owners": total_distinct_owner_id,
-#                 },
-#             }
-#         )
-
-#     except Exception as e:
-#         print(f"Exception {e} while getting count values")
-#         traceback.print_exc()
-#         return jsonify({"message": "failed", "error": str(e)})
-
-
-# @app.route("/processor-records", methods=["POST"])
-# def records_processor():
-#     try:
-#         request_body = request.get_json(silent=True)
-#         print("request body")
-#         print(request_body)
-#         df = load_df()
-#         results = pd.DataFrame()
-
-#         if request_body:
-#             results = apply_filters(df=df, filter_dict=request_body)
-
-#         else:
-#             results = df.copy()
-
-#         # page = request.args.get("page", 1, type=int)
-#         # per_page = 10
-
-#         # prev = True if page > 1 else False
-#         # next = True if results.shape[0] > per_page else False
-
-#         # filterd_df = pd.DataFrame()
-
-#         # if
-
-#         # filterd_df = results.iloc[]
-
-#         data = results.head(100).to_html(classes="table table-striped", index=False)
-
-#         results.to_csv("/tmp/filtered.csv", index=False)
-
-#         # rendered_html = render_template(
-#         #     "result.html", data=data, page=page, prev=prev, next=next
-#         # )
-#         return jsonify({"html": data})
-
-#     except Exception as e:
-#         print(f"Exception {e} while getting count values")
-#         traceback.print_exc()
-#         return jsonify({"message": "failed", "error": str(e)})
-
-
-# @app.route("/start-export-records", methods=["POST"])
-# def records_display_processor():
-#     df = load_df()
-
-#     request_body = request.get_json(silent=True)
-#     print("request body")
-#     print(request_body)
-
-#     if request_body:
-#         results = apply_filters(df=df, filter_dict=request_body)
-
-#     else:
-#         results = df.copy()
-
-#     if results is not None and isinstance(results, pd.DataFrame):
-#         print("export data ", len(results))
-
-#         results.to_csv("filtered_records.csv", index=False)
-
-#         return jsonify({"message": "success", "file": "filtered_records.csv"})
-
-#     else:
-#         print("results failed")
-
-#         return jsonify({"message": "failed"})
 
 
 @app.route("/query-db", methods=["GET"])
@@ -855,6 +735,8 @@ def export_records():
         processor = PropertyRecordsPreProcessor(dataframe=df)
         processed_df = processor.pre_process_fetched_results()
 
+        print("process df ", list(processed_df.columns))
+
         if (
             isinstance(processed_df, dict)
             and "message" in processed_df
@@ -877,6 +759,8 @@ def export_records():
                 processed_df["Market_Price"] <= market_price_max
             ]
 
+        # print("process df ", list(processed_df.columns))
+
         # Step 4: Group by 'Owner_ID', 'Property_State_Name', and 'Property_County_Name'
         grouped_df = (
             processed_df.groupby(
@@ -888,18 +772,25 @@ def export_records():
                     "Lot_Acreage": lambda x: x.tolist(),
                     "Market_Price": lambda x: x.tolist(),
                     "Offer_Price": lambda x: x.tolist(),
+                    "Final_Offer_Price": lambda x: x.tolist(),
                     "Owner_Full_Name": "first",
                     "Owner_Last_Name": "first",
                     "Owner_First_Name": "first",
                     "Owner_Short_Name": "first",
                     "Owner_Name_Type": "first",
+                    "Mail_City": "first",
+                    "Mail_State": "first",
+                    "Mail_Street_Address": "first",
+                    "Mail_Zip_Code": "first",
                 }
             )
             .reset_index()
         )
-        grouped_df = processed_df.groupby(
-            ["Owner_ID", "Property_State_Name", "Property_County_Name"]
-        ).apply(lambda x: x.reset_index(drop=True))
+        # grouped_df = processed_df.groupby(
+        #     ["Owner_ID", "Property_State_Name", "Property_County_Name"]
+        # ).apply(lambda x: x.reset_index(drop=True))
+
+        # print(grouped_df.columns)
 
         # Step 5: Assign control numbers
         grouped_df = assign_control_numbers(grouped_df)
