@@ -811,6 +811,10 @@ def assign_control_numbers(df):
 
     control_numbers = random.sample(range(min_value, max_value + 1), num_combinations)
 
+    control_numbers = [
+        str(control_number).zfill(6) for control_number in control_numbers
+    ]
+
     # Map unique combinations to control numbers
     unique_combinations["control_number"] = control_numbers
     control_number_map = unique_combinations.set_index(
@@ -874,16 +878,24 @@ def export_records():
             ]
 
         # Step 4: Group by 'Owner_ID', 'Property_State_Name', and 'Property_County_Name'
-        grouped_df = processed_df.groupby(['Owner_ID', 'Property_State_Name', 'Property_County_Name']).agg({
-            'APN': lambda x: x.tolist(),
-            'Lot_Acreage': lambda x: x.tolist(),
-            'Market_Price': lambda x: x.tolist(),
-            'Offer_Price': lambda x: x.tolist(),
-            'Owner_Full_Name': 'first',
-            'Owner_Last_Name': 'first',
-            'Owner_First_Name': 'first',
-            'Owner_Short_Name': 'first'
-        }).reset_index()
+        grouped_df = (
+            processed_df.groupby(
+                ["Owner_ID", "Property_State_Name", "Property_County_Name"]
+            )
+            .agg(
+                {
+                    "APN": lambda x: x.tolist(),
+                    "Lot_Acreage": lambda x: x.tolist(),
+                    "Market_Price": lambda x: x.tolist(),
+                    "Offer_Price": lambda x: x.tolist(),
+                    "Owner_Full_Name": "first",
+                    "Owner_Last_Name": "first",
+                    "Owner_First_Name": "first",
+                    "Owner_Short_Name": "first",
+                }
+            )
+            .reset_index()
+        )
         grouped_df = processed_df.groupby(
             ["Owner_ID", "Property_State_Name", "Property_County_Name"]
         ).apply(lambda x: x.reset_index(drop=True))
@@ -915,7 +927,7 @@ def export_records():
 
                 # Update the reference number to include both mail group and control number
                 group["reference_number"] = group.apply(
-                    lambda row: f"{mail_group_name}_{row['control_number']}", axis=1
+                    lambda row: f"{mail_group_name}-{row['control_number']}", axis=1
                 )
 
                 # Convert group DataFrame to CSV
