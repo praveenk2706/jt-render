@@ -1,10 +1,13 @@
 import io
 import os
 import pathlib
+import random
 import sys
 import threading
 import traceback
+import zipfile
 
+import numpy as np
 import pandas as pd
 import requests
 from flask import (
@@ -56,9 +59,7 @@ from services.filterer import (  # noqa: F401
     load_df,
 )
 from services.v2_pricing_helper import PropertyRecordsPreProcessor
-import random
-import zipfile
-import numpy as np
+
 print(sys.getrecursionlimit())
 sys.setrecursionlimit(10000)
 print(sys.getrecursionlimit())
@@ -320,10 +321,10 @@ def query_counts_after_filter():
         null_checks = []
 
         for key, value in request_body.items():
-            if key.endswith('-include-null'):
-                field_name = key.replace('-include-null', '')
+            if key.endswith("-include-null"):
+                field_name = key.replace("-include-null", "")
                 if value:
-                    if key == 'zip-code-matching-include-null':
+                    if key == "zip-code-matching-include-null":
                         null_checks.append(
                             "Property_Zip_Code IS NULL OR Mail_Zip_Code IS NULL OR "
                             "Mail_Zip_Code_9 IS NULL OR Mail_Zip_Code_R IS NULL OR "
@@ -331,10 +332,11 @@ def query_counts_after_filter():
                         )
                     else:
                         # Add NULL check for other fields
-                        null_checks.append(f"{field_schema_mapping.get(field_name)} IS NULL")
+                        null_checks.append(
+                            f"{field_schema_mapping.get(field_name)} IS NULL"
+                        )
             else:
                 filters[key] = value
-
 
         print("Filters\n", filters)
         # base_query = fetch_v13_prefix
@@ -342,27 +344,31 @@ def query_counts_after_filter():
 
         def range_filter(field_name, field_value):
             return {
-                "min": number_input_validator(value=field_value.get("min"), field_name=f"{field_name}-min"),
-                "max": number_input_validator(value=field_value.get("max"), field_name=f"{field_name}-max"),
+                "min": number_input_validator(
+                    value=field_value.get("min"), field_name=f"{field_name}-min"
+                ),
+                "max": number_input_validator(
+                    value=field_value.get("max"), field_name=f"{field_name}-max"
+                ),
             }
 
         for key, value in filters.items():
-            if key == 'zip-code-matching' and value is not None:
-                    sub_query = customQueryBuilderInstance.build_query(
-                            field_name=key,
-                            filter_values=value,
-                    )
-                    print(sub_query,"zipppppppppppppppppppppppppppppppp")
+            if key == "zip-code-matching" and value is not None:
+                sub_query = customQueryBuilderInstance.build_query(
+                    field_name=key,
+                    filter_values=value,
+                )
+                print(sub_query, "zipppppppppppppppppppppppppppppppp")
             if key in field_schema_mapping:
                 mapped_field_name = field_schema_mapping[key]
                 print(mapped_field_name, "mapped_field_name--------")
-                print(value,"dict")
+                print(value, "dict")
 
                 if isinstance(value, dict) and ("min" in value or "max" in value):
-                    print(value,"dict")
+                    print(value, "dict")
                     # Range filter case
                     filter_values = range_filter(key, value)
-                   
+
                     sub_query = customQueryBuilderInstance.build_query(
                         field_name=mapped_field_name,
                         filter_values=filter_values,
@@ -382,7 +388,7 @@ def query_counts_after_filter():
                         field_name=mapped_field_name,
                         filter_values=value,
                     )
-                
+
             if sub_query:
                 sub_queries.append(sub_query)
 
@@ -391,7 +397,7 @@ def query_counts_after_filter():
         if sub_queries:
             # Start with the sub_queries combined by AND
             query_end = " WHERE " + " AND ".join(sub_queries)
-            
+
             if null_checks:
                 # Combine null_checks with sub_queries using OR
                 query_end += " OR (" + " OR ".join(null_checks) + ")"
@@ -785,34 +791,44 @@ def split_groups_evenly(df, num_groups):
     sizes = [avg_size + 1] * remainder + [avg_size] * (num_groups - remainder)
     return np.split(df, np.cumsum(sizes[:-1]))
 
+
 def assign_control_numbers(df):
     """Assigns unique random control numbers to unique combinations of columns."""
     min_value = 1
     max_value = 999999
 
     # Identify unique combinations and their count
-    unique_combinations = df[['Owner_ID', 'Property_State_Name', 'Property_County_Name']].drop_duplicates()
+    unique_combinations = df[
+        ["Owner_ID", "Property_State_Name", "Property_County_Name"]
+    ].drop_duplicates()
     num_combinations = len(unique_combinations)
-    
+
     # Generate unique random control numbers
     if num_combinations > (max_value - min_value + 1):
-        raise ValueError("Number of unique combinations exceeds the available range for control numbers.")
-    
+        raise ValueError(
+            "Number of unique combinations exceeds the available range for control numbers."
+        )
+
     control_numbers = random.sample(range(min_value, max_value + 1), num_combinations)
-    
+
     # Map unique combinations to control numbers
-    unique_combinations['control_number'] = control_numbers
-    control_number_map = unique_combinations.set_index(['Owner_ID', 'Property_State_Name', 'Property_County_Name'])['control_number'].to_dict()
-    
+    unique_combinations["control_number"] = control_numbers
+    control_number_map = unique_combinations.set_index(
+        ["Owner_ID", "Property_State_Name", "Property_County_Name"]
+    )["control_number"].to_dict()
+
     # Assign control numbers to the DataFrame
-    df['control_number'] = df.apply(
-        lambda row: control_number_map[(row['Owner_ID'], row['Property_State_Name'], row['Property_County_Name'])],
-        axis=1
+    df["control_number"] = df.apply(
+        lambda row: control_number_map[
+            (row["Owner_ID"], row["Property_State_Name"], row["Property_County_Name"])
+        ],
+        axis=1,
     )
-    
+
     return df
 
-@app.route("/export-records", methods=['GET'])
+
+@app.route("/export-records", methods=["GET"])
 def export_records():
     try:
         # Read the query from file
@@ -825,55 +841,81 @@ def export_records():
         # Fetch results (Replace with actual data fetch logic)
         results = bigQueryFetchInstance.runQuery(queryString=query)
         df = pd.DataFrame(results)
- 
+
         # Step 1: Sort the DataFrame
-        df = df.sort_values(by=['Owner_ID', 'Property_State_Name', 'Property_County_Name', 'APN'])
+        df = df.sort_values(
+            by=["Owner_ID", "Property_State_Name", "Property_County_Name", "APN"]
+        )
 
         # Step 2: Pre-process the DataFrame using the PropertyRecordsPreProcessor
         processor = PropertyRecordsPreProcessor(dataframe=df)
         processed_df = processor.pre_process_fetched_results()
 
-        if isinstance(processed_df, dict) and 'message' in processed_df and processed_df['message'] == 'failed':
+        if (
+            isinstance(processed_df, dict)
+            and "message" in processed_df
+            and processed_df["message"] == "failed"
+        ):
             print(f"Error: {processed_df['error']}")
-            return jsonify({"error": processed_df['error']})
+            return jsonify({"error": processed_df["error"]})
 
         # Step 3: Apply market price filter
-        market_price_min = request.args.get('marketPriceMin', type=float, default=None)
-        market_price_max = request.args.get('marketPriceMax', type=float, default=None)
+        market_price_min = request.args.get("marketPriceMin", type=float, default=None)
+        market_price_max = request.args.get("marketPriceMax", type=float, default=None)
 
         if market_price_min is not None:
-            processed_df = processed_df[processed_df['Market_Price'] >= market_price_min]
+            processed_df = processed_df[
+                processed_df["Market_Price"] >= market_price_min
+            ]
 
         if market_price_max is not None:
-            processed_df = processed_df[processed_df['Market_Price'] <= market_price_max]
+            processed_df = processed_df[
+                processed_df["Market_Price"] <= market_price_max
+            ]
 
         # Step 4: Group by 'Owner_ID', 'Property_State_Name', and 'Property_County_Name'
-        grouped_df = processed_df.groupby(['Owner_ID', 'Property_State_Name', 'Property_County_Name']).apply(lambda x: x.reset_index(drop=True))
+        grouped_df = processed_df.groupby(['Owner_ID', 'Property_State_Name', 'Property_County_Name']).agg({
+            'APN': lambda x: x.tolist(),
+            'Lot_Acreage': lambda x: x.tolist(),
+            'Market_Price': lambda x: x.tolist(),
+            'Offer_Price': lambda x: x.tolist(),
+            'Owner_Full_Name': 'first',
+            'Owner_Last_Name': 'first',
+            'Owner_First_Name': 'first',
+            'Owner_Short_Name': 'first'
+        }).reset_index()
+        grouped_df = processed_df.groupby(
+            ["Owner_ID", "Property_State_Name", "Property_County_Name"]
+        ).apply(lambda x: x.reset_index(drop=True))
 
         # Step 5: Assign control numbers
         grouped_df = assign_control_numbers(grouped_df)
 
+        # Step 6: Shuffle the combinations
+        shuffled_df = grouped_df.sample(frac=1).reset_index(drop=True)
+
         # Create reference number
-        mail_groups = request.args.get('mailGroups', '').split(',')
+        mail_groups = request.args.get("mailGroups", "").split(",")
         num_mail_groups = len(mail_groups)
 
         if num_mail_groups == 0:
             return jsonify({"error": "No mail groups provided"})
 
-        # Split the grouped DataFrame into evenly sized groups
-        split_groups = split_groups_evenly(grouped_df, num_mail_groups)
+        # Split the shuffled DataFrame into evenly sized groups
+        split_groups = split_groups_evenly(shuffled_df, num_mail_groups)
 
         # Create a zip buffer to hold the CSVs
         buffer = io.BytesIO()
-        with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            for i, (group, mail_group_name) in enumerate(zip(split_groups, mail_groups)):
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
+            for i, (group, mail_group_name) in enumerate(
+                zip(split_groups, mail_groups)
+            ):
                 # Add mail group name
-                group['Mailer_Group'] = mail_group_name
+                group["Mailer_Group"] = mail_group_name
 
                 # Update the reference number to include both mail group and control number
-                group['reference_number'] = group.apply(
-                    lambda row: f"{mail_group_name}_{row['control_number']}",
-                    axis=1
+                group["reference_number"] = group.apply(
+                    lambda row: f"{mail_group_name}_{row['control_number']}", axis=1
                 )
 
                 # Convert group DataFrame to CSV
@@ -882,7 +924,7 @@ def export_records():
                 csv_buffer.seek(0)
 
                 # Add CSV to zip
-                zipf.writestr(f'{mail_group_name}.csv', csv_buffer.getvalue())
+                zipf.writestr(f"{mail_group_name}.csv", csv_buffer.getvalue())
 
         buffer.seek(0)
 
@@ -890,13 +932,12 @@ def export_records():
             buffer,
             as_attachment=True,
             download_name="records.zip",
-            mimetype="application/zip"
+            mimetype="application/zip",
         )
 
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
-
 
 
 @cache.cached(timeout=3600)
@@ -911,10 +952,10 @@ def fetch_records():
         null_checks = []
 
         for key, value in request_body.items():
-            if key.endswith('-include-null'):
-                field_name = key.replace('-include-null', '')
+            if key.endswith("-include-null"):
+                field_name = key.replace("-include-null", "")
                 if value:
-                    if key == 'zip-code-matching-include-null':
+                    if key == "zip-code-matching-include-null":
                         null_checks.append(
                             "Property_Zip_Code IS NULL OR Mail_Zip_Code IS NULL OR "
                             "Mail_Zip_Code_9 IS NULL OR Mail_Zip_Code_R IS NULL OR "
@@ -922,7 +963,9 @@ def fetch_records():
                         )
                     else:
                         # Add NULL check for other fields
-                        null_checks.append(f"{field_schema_mapping.get(field_name)} IS NULL")
+                        null_checks.append(
+                            f"{field_schema_mapping.get(field_name)} IS NULL"
+                        )
             else:
                 filters[key] = value
 
@@ -931,26 +974,30 @@ def fetch_records():
 
         def range_filter(field_name, field_value):
             return {
-                "min": number_input_validator(value=field_value.get("min"), field_name=f"{field_name}-min"),
-                "max": number_input_validator(value=field_value.get("max"), field_name=f"{field_name}-max"),
+                "min": number_input_validator(
+                    value=field_value.get("min"), field_name=f"{field_name}-min"
+                ),
+                "max": number_input_validator(
+                    value=field_value.get("max"), field_name=f"{field_name}-max"
+                ),
             }
 
         for key, value in filters.items():
-            if key == 'zip-code-matching' and value is not None:
-                    sub_query = customQueryBuilderInstance.build_query(
-                            field_name=key,
-                            filter_values=value,
-                    )
+            if key == "zip-code-matching" and value is not None:
+                sub_query = customQueryBuilderInstance.build_query(
+                    field_name=key,
+                    filter_values=value,
+                )
             if key in field_schema_mapping:
                 mapped_field_name = field_schema_mapping[key]
                 print(mapped_field_name, "mapped_field_name--------")
-                print(value,"dict")
+                print(value, "dict")
 
                 if isinstance(value, dict) and ("min" in value or "max" in value):
-                    print(value,"dict")
+                    print(value, "dict")
                     # Range filter case
                     filter_values = range_filter(key, value)
-                   
+
                     sub_query = customQueryBuilderInstance.build_query(
                         field_name=mapped_field_name,
                         filter_values=filter_values,
@@ -970,7 +1017,7 @@ def fetch_records():
                         field_name=mapped_field_name,
                         filter_values=value,
                     )
-                
+
                 if sub_query:
                     sub_queries.append(sub_query)
 
@@ -979,7 +1026,7 @@ def fetch_records():
         if sub_queries:
             # Start with the sub_queries combined by AND
             query_end = " WHERE " + " AND ".join(sub_queries)
-            
+
             if null_checks:
                 # Combine null_checks with sub_queries using OR
                 query_end += " OR (" + " OR ".join(null_checks) + ")"
@@ -991,7 +1038,7 @@ def fetch_records():
 
         print("updated query")
         print(">>\n", updated_query, "\n<<")
-       
+
         # Save the query to a file (optional)
         with open("/tmp/query.txt", "w") as fb:
             fb.write(updated_query)
@@ -1014,7 +1061,7 @@ def export_data():
     print(query)
 
     if query.strip() == "":
-        return jsonify({"message": "failed"}), 500 
+        return jsonify({"message": "failed"}), 500
 
     t1 = threading.Thread(target=call_cloud_function_for_data_processing, args=(query,))
     t1.start()
