@@ -133,7 +133,7 @@
                 return;
             }
 
-            if (campaignName && mailGroups.length > 0 && (marketPriceMin || marketPriceMax)) {
+            if (campaignName && mailGroups.length > 0) {
                 // Example: Initiating download
                 var exportUrl = `/export-records?query=your_query_here&mailGroups=${encodeURIComponent(mailGroups.join(','))}&marketPriceMin=${encodeURIComponent(marketPriceMin)}&marketPriceMax=${encodeURIComponent(marketPriceMax)}`;
 

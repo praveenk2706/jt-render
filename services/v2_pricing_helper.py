@@ -400,9 +400,9 @@ class PropertyRecordsPreProcessor:
         """
 
         try:
+            
             self.logger.debug(f"Processing row: {row.name}")
             # self.logger.debug(str(row["Property_State_Name_Short"]).strip().lower() if )
-
             sheet_name = ""
 
             # Map state abbreviation to corresponding sheet name
@@ -411,12 +411,15 @@ class PropertyRecordsPreProcessor:
                     sheet_name = "Arizona"
                 case "georgia":
                     sheet_name = "Georgia"
+                case "north carolina":
+                    sheet_name = "NC"
                 case _:
                     if str(row["Property_State_Name"]).strip().lower() in [
                         "NC",
                         "NORTH CAROLINA",
                         "NORTH-CAROLINA",
                         "NORTH_CAROLINA",
+                        "North Carolina"
                     ]:
                         sheet_name = "NC"
 

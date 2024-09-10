@@ -460,7 +460,7 @@ Joined AS (
 
 
 fetch_v13_prefix = """WITH
-  PropertyOwnersDetailsCTE AS (
+  PropertyOwnerDetailsCTE AS (
   SELECT
     properties.*,
     owners.Owner_First_Name,

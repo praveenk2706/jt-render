@@ -109,7 +109,7 @@ def index():
 def get_owner_name_types():
     try:
         results = bigQueryFetchInstance.runQuery(
-            "SELECT DISTINCT Owner_Name_Type FROM `property-database-370200.Dev_Dataset_2.Owners_Data`"
+            "SELECT DISTINCT Owner_Name_Type FROM `property-database-370200.Dataset_v3.Owners`"
         )
 
         if results is None or not isinstance(results, pd.DataFrame) or results.empty:
@@ -405,11 +405,11 @@ def query_counts_after_filter():
             str(sub_query).upper().replace("WHERE", "") for sub_query in sub_queries
         ]
         updated_query_all = (
-            "SELECT COUNT(*) AS CNT FROM `property-database-370200.Dev_Dataset_2.PropertyOwnersDetailsCTE` "
+            "SELECT COUNT(*) AS CNT FROM `property-database-370200.Dataset_v3.PropertyOwnerDetailsCTE` "
             + query_end
         )
         updated_query_owner = (
-            "SELECT COUNT(DISTINCT Owner_ID) AS CNT FROM `property-database-370200.Dev_Dataset_2.PropertyOwnersDetailsCTE` "
+            "SELECT COUNT(DISTINCT Owner_ID) AS CNT FROM `property-database-370200.Dataset_v3.PropertyOwnerDetailsCTE` "
             + query_end
         )
 
@@ -828,7 +828,7 @@ def export_records():
  
         # Step 1: Sort the DataFrame
         df = df.sort_values(by=['Owner_ID', 'Property_State_Name', 'Property_County_Name', 'APN'])
- 
+
         # Step 2: Pre-process the DataFrame using the PropertyRecordsPreProcessor
         processor = PropertyRecordsPreProcessor(dataframe=df)
         processed_df = processor.pre_process_fetched_results()
@@ -860,12 +860,7 @@ def export_records():
         if num_mail_groups == 0:
             return jsonify({"error": "No mail groups provided"})
 
-        # Create a new column for reference number
-        grouped_df['reference_number'] = grouped_df.apply(
-            lambda row: f"{mail_groups[0]}_{row['control_number']}", axis=1
-        )
-
-        # Step 6: Split the grouped DataFrame into evenly sized groups
+        # Split the grouped DataFrame into evenly sized groups
         split_groups = split_groups_evenly(grouped_df, num_mail_groups)
 
         # Create a zip buffer to hold the CSVs
@@ -875,7 +870,13 @@ def export_records():
                 # Add mail group name
                 group['Mailer_Group'] = mail_group_name
 
-                # Convert group DataFrame to CSV                                                                                
+                # Update the reference number to include both mail group and control number
+                group['reference_number'] = group.apply(
+                    lambda row: f"{mail_group_name}_{row['control_number']}",
+                    axis=1
+                )
+
+                # Convert group DataFrame to CSV
                 csv_buffer = io.BytesIO()
                 group.to_csv(csv_buffer, index=False)
                 csv_buffer.seek(0)
@@ -895,6 +896,7 @@ def export_records():
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
+
 
 
 @cache.cached(timeout=3600)
@@ -983,7 +985,7 @@ def fetch_records():
                 query_end += " OR (" + " OR ".join(null_checks) + ")"
 
         updated_query = (
-            "SELECT * FROM `property-database-370200.Dev_Dataset_2.PropertyOwnersDetailsCTE` "
+            "SELECT * FROM `property-database-370200.Dataset_v3.PropertyOwnerDetailsCTE` "
             + query_end
         )
 
