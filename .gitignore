@@ -166,9 +166,3 @@ services/raw.csv
 services/.~lock.output.csv#
 
 .vscode
-mail-engine-app-engine-service-account-key.json
-services/owner_id_sorted.csv
-pricing_research.xlsx
-uploads/Received_From_Mail_House_exported.csv
-uploads/output.csv
-service_accounts.json

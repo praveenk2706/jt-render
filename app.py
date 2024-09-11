@@ -83,7 +83,27 @@ CLOUD_STORAGE_CLIENT = CloudStorageHelper(store_location="Received_From_Mail_Hou
 @app.route("/", methods=["GET"])
 def index():
     # os.system('clear')
+
+    # df = load_df()
+    # print(df.columns)
+    # filter_options = generate_filter_options(df)
+
+    # print(filter_options)
+
     return render_template("index.html")
+
+
+# @app.route("/get-filter-values", methods=["GET", "POST"])
+# def get_filter_values():
+#     try:
+#         filter_options = generate_filter_options(df)
+
+#         return jsonify({"message": "success", "data": filter_options})
+
+#     except Exception as e:
+#         print(f"Exception {e} while getting filter values")
+#         traceback.print_exc()
+#         return jsonify({"message": "failed", "error": str(e)})
 
 
 @app.route("/get-owner-name-type", methods=["GET"])
@@ -189,7 +209,6 @@ def convert_to_int_list(str_list):
                 return []  # Return an empty list in case of a ValueError
     return converted_list
 
-
 @app.route("/query-count", methods=["POST"])
 def query_counts_after_filter():
     try:
@@ -199,29 +218,27 @@ def query_counts_after_filter():
 
         filters = {}
         null_checks = []
+        outside_filters = []
 
+        # Separate filters and null checks
         for key, value in request_body.items():
-            if key.endswith("-include-null"):
-                field_name = key.replace("-include-null", "")
-                if value:
-                    if key == "zip-code-matching-include-null":
-                        null_checks.append(
-                            "Property_Zip_Code IS NULL OR Mail_Zip_Code IS NULL OR "
-                            "Mail_Zip_Code_9 IS NULL OR Mail_Zip_Code_R IS NULL OR "
-                            "Mail_ZipCode_STD IS NULL"
-                        )
-                    else:
-                        # Add NULL check for other fields
-                        null_checks.append(
-                            f"{field_schema_mapping.get(field_name)} IS NULL"
-                        )
-            else:
-                filters[key] = value
+            # if key.endswith("-include-null"):
+            #     field_name = key.replace("-include-null", "")
+            #     if value:  # include-null is true
+            #         if key == "zip-code-matching-include-null":
+            #             null_checks.append(
+            #                 "Property_Zip_Code IS NULL OR Mail_Zip_Code IS NULL OR "
+            #                 "Mail_Zip_Code_9 IS NULL OR Mail_Zip_Code_R IS NULL OR "
+            #                 "Mail_ZipCode_STD IS NULL"
+            #             )
+            #         else:
+            #             null_checks.append(
+            #                 f"{field_schema_mapping.get(field_name)} IS NULL"
+            #             )
+            # else:
+            filters[key] = value
 
-        print("Filters\n", filters)
-        # base_query = fetch_v13_prefix
-        sub_queries = []
-
+        # Helper function to handle range filters
         def range_filter(field_name, field_value):
             return {
                 "min": number_input_validator(
@@ -232,23 +249,27 @@ def query_counts_after_filter():
                 ),
             }
 
+        # Construct the subqueries
         for key, value in filters.items():
+            sub_query = None
+            include_null = False  # Track if we should include NULL condition
+
             if key == "zip-code-matching" and value is not None:
                 sub_query = customQueryBuilderInstance.build_query(
                     field_name=key,
                     filter_values=value,
                 )
-                print(sub_query, "zipppppppppppppppppppppppppppppppp")
+
+                print(sub_query)
             if key in field_schema_mapping:
                 mapped_field_name = field_schema_mapping[key]
-                print(mapped_field_name, "mapped_field_name--------")
-                print(value, "dict")
+
+                # Check if the field has an include-null flag
+                include_null_key = f"{key}-include-null"
+                include_null = include_null_key in request_body and request_body[include_null_key]
 
                 if isinstance(value, dict) and ("min" in value or "max" in value):
-                    print(value, "dict")
-                    # Range filter case
                     filter_values = range_filter(key, value)
-
                     sub_query = customQueryBuilderInstance.build_query(
                         field_name=mapped_field_name,
                         filter_values=filter_values,
@@ -269,45 +290,43 @@ def query_counts_after_filter():
                         filter_values=value,
                     )
 
+            # Add to appropriate filter list
             if sub_query:
-                sub_queries.append(sub_query)
+                # If include-null is true, add the sub_query and IS NULL combined inside WITH A
+                if include_null:
+                    null_checks.append(f"({sub_query} OR {mapped_field_name} IS NULL)")
+                else:
+                    outside_filters.append(sub_query)
 
-        # Combine subqueries and null checks
-        query_end = ""
-        if sub_queries:
-            # Start with the sub_queries combined by AND
-            query_end = " WHERE " + " AND ".join(sub_queries)
+        # Build the final query with WITH A AS block and outside WHERE clause
+        null_checks_query = " AND ".join(null_checks)
+        outside_filters_query = " AND ".join(outside_filters)
 
-            if null_checks:
-                # Combine null_checks with sub_queries using OR
-                query_end += " OR (" + " OR ".join(null_checks) + ")"
+        # Base query structure
+        full_query = f"""
+            WITH A AS (
+                SELECT * FROM `property-database-370200.Dataset_v3.PropertyOwnerDetailsCTE`
+                {"WHERE " + null_checks_query if null_checks_query else ""}
+            )
+        """
 
-        print(f"Query End {query_end}")
+        if outside_filters_query:
+            full_query += f"\nSELECT COUNT(*) AS CNT FROM A WHERE {outside_filters_query}"
+        else:
+            full_query += f"\nSELECT COUNT(*) AS CNT FROM A"
 
-        # sub_query = " AND ".join(sub_queries)
-        print("sub queries")
-        print(sub_queries)
-        sub_queries = [
-            str(sub_query).upper().replace("WHERE", "") for sub_query in sub_queries
-        ]
-        updated_query_all = (
-            "SELECT COUNT(*) AS CNT FROM `property-database-370200.Dataset_v3.PropertyOwnerDetailsCTE` "
-            + query_end
-        )
-        updated_query_owner = (
-            "SELECT COUNT(DISTINCT Owner_ID) AS CNT FROM `property-database-370200.Dataset_v3.PropertyOwnerDetailsCTE` "
-            + query_end
-        )
+        # For distinct owner count query
+        updated_query_owner = full_query.replace("COUNT(*) AS CNT", "COUNT(DISTINCT Owner_ID) AS CNT")
 
-        print("updated query")
+        # Log the final queries
+        print(f"Full query: {full_query}")
+        print(f"Distinct owner query: {updated_query_owner}")
 
+        # Execute the queries
         countdf1, countdf2 = (
-            bigQueryFetchInstance.runQuery(queryString=updated_query_all),
+            bigQueryFetchInstance.runQuery(queryString=full_query),
             bigQueryFetchInstance.runQuery(queryString=updated_query_owner),
         )
-
-        print(countdf2)
-        print(countdf1)
 
         return jsonify(
             {
@@ -319,15 +338,6 @@ def query_counts_after_filter():
             }
         ), 200
 
-        # print(">>\n", updated_query, "\n<<")
-
-        # results.to_csv('export.csv')
-        # with open("/tmp/query.txt", "w") as fb:
-        #     # fb.write(updated_query)
-        # fb.close()
-
-        return redirect("/view-records")
-
     except Exception as e:
         print("cannot fetch records")
         print(e)
@@ -336,6 +346,7 @@ def query_counts_after_filter():
             "error/page-500.html",
             context={"message": "Could not fetch records", "error": str(e)},
         )
+
 
 
 @app.route("/get-location-filters", methods=["GET"])
@@ -692,7 +703,7 @@ def assign_control_numbers(df):
     control_numbers = random.sample(range(min_value, max_value + 1), num_combinations)
 
     control_numbers = [
-        str(control_number).zfill(6) for control_number in control_numbers
+        str(control_number).zfill(7) for control_number in control_numbers
     ]
 
     # Map unique combinations to control numbers
@@ -735,8 +746,6 @@ def export_records():
         processor = PropertyRecordsPreProcessor(dataframe=df)
         processed_df = processor.pre_process_fetched_results()
 
-        print("process df ", list(processed_df.columns))
-
         if (
             isinstance(processed_df, dict)
             and "message" in processed_df
@@ -758,8 +767,6 @@ def export_records():
             processed_df = processed_df[
                 processed_df["Market_Price"] <= market_price_max
             ]
-
-        # print("process df ", list(processed_df.columns))
 
         # Step 4: Group by 'Owner_ID', 'Property_State_Name', and 'Property_County_Name'
         grouped_df = (
@@ -786,11 +793,6 @@ def export_records():
             )
             .reset_index()
         )
-        # grouped_df = processed_df.groupby(
-        #     ["Owner_ID", "Property_State_Name", "Property_County_Name"]
-        # ).apply(lambda x: x.reset_index(drop=True))
-
-        print(list(grouped_df.columns))
 
         # Step 5: Assign control numbers
         grouped_df = assign_control_numbers(grouped_df)
@@ -854,30 +856,28 @@ def fetch_records():
 
         filters = {}
         null_checks = []
+        outside_filters = []
 
-        print(request_body)
-
+        # Separate filters and null checks
         for key, value in request_body.items():
-            if key.endswith("-include-null"):
-                field_name = key.replace("-include-null", "")
-                if value:
-                    if key == "zip-code-matching-include-null":
-                        null_checks.append(
-                            "Property_Zip_Code IS NULL OR Mail_Zip_Code IS NULL OR "
-                            "Mail_Zip_Code_9 IS NULL OR Mail_Zip_Code_R IS NULL OR "
-                            "Mail_ZipCode_STD IS NULL"
-                        )
-                    else:
-                        # Add NULL check for other fields
-                        null_checks.append(
-                            f"{field_schema_mapping.get(field_name)} IS NULL"
-                        )
-            else:
-                filters[key] = value
+            # if key.endswith("-include-null"):
+            #     field_name = key.replace("-include-null", "")
+            #     if value:  # include-null is true
+            #         if key == "zip-code-matching-include-null":
+            #             null_checks.append(
+            #                 "Property_Zip_Code IS NULL OR Mail_Zip_Code IS NULL OR "
+            #                 "Mail_Zip_Code_9 IS NULL OR Mail_Zip_Code_R IS NULL OR "
+            #                 "Mail_ZipCode_STD IS NULL"
+            #             )
+            #         else:
+            #             null_checks.append(
+            #                 f"{field_schema_mapping.get(field_name)} IS NULL"
+            #             )
+            # else:
+            filters[key] = value
 
-        # Process filters and range filters as needed
-        sub_queries = []
 
+        # Helper function to handle range filters
         def range_filter(field_name, field_value):
             return {
                 "min": number_input_validator(
@@ -888,22 +888,34 @@ def fetch_records():
                 ),
             }
 
+        # Construct the subqueries
         for key, value in filters.items():
+            sub_query = None
+            include_null = False  # Track if we should include NULL condition
+
             if key == "zip-code-matching" and value is not None:
+
+              
                 sub_query = customQueryBuilderInstance.build_query(
                     field_name=key,
                     filter_values=value,
                 )
+            
+            # if key == "owner-do-not-mail" and value is not None:
+            #     print(key, "value--------", value)
+            #     sub_query = customQueryBuilderInstance.build_query(
+            #         field_name=key,
+            #         filter_values=value,
+            #     )
             if key in field_schema_mapping:
                 mapped_field_name = field_schema_mapping[key]
-                print(mapped_field_name, "mapped_field_name--------")
-                print(value, "dict")
+
+                # Check if the field has an include-null flag
+                include_null_key = f"{key}-include-null"
+                include_null = include_null_key in request_body and request_body[include_null_key]
 
                 if isinstance(value, dict) and ("min" in value or "max" in value):
-                    print(value, "dict")
-                    # Range filter case
                     filter_values = range_filter(key, value)
-
                     sub_query = customQueryBuilderInstance.build_query(
                         field_name=mapped_field_name,
                         filter_values=filter_values,
@@ -924,30 +936,37 @@ def fetch_records():
                         filter_values=value,
                     )
 
-                if sub_query:
-                    sub_queries.append(sub_query)
+            # Add to appropriate filter list
+            if sub_query:
+                # If include-null is true, add the sub_query and IS NULL combined inside WITH A
+                if include_null:
+                    null_checks.append(f"({sub_query} OR {mapped_field_name} IS NULL)")
+                else:
+                    outside_filters.append(sub_query)
 
-        # Combine subqueries and null checks
-        query_end = ""
-        if sub_queries:
-            # Start with the sub_queries combined by AND
-            query_end = " WHERE " + " AND ".join(sub_queries)
+        # Build the final query with WITH A AS block and outside WHERE clause
+        null_checks_query = " AND ".join(null_checks)
+        outside_filters_query = " AND ".join(outside_filters)
+        
+        # Base query structure
+        full_query = f"""
+            WITH A AS (
+                SELECT * FROM `property-database-370200.Dataset_v3.PropertyOwnerDetailsCTE`
+                {"WHERE " + null_checks_query if null_checks_query else ""}
+            )
+        """
 
-            if null_checks:
-                # Combine null_checks with sub_queries using OR
-                query_end += " OR (" + " OR ".join(null_checks) + ")"
-
-        updated_query = (
-            "SELECT * FROM `property-database-370200.Dataset_v3.PropertyOwnerDetailsCTE` "
-            + query_end
-        )
+        if outside_filters_query:
+            full_query += f"\nSELECT * FROM A WHERE {outside_filters_query}"
+        else:
+            full_query += f"\nSELECT * FROM A"
 
         print("updated query")
-        print(">>\n", updated_query, "\n<<")
+        print(">>\n", full_query, "\n<<")
 
         # Save the query to a file (optional)
         with open("/tmp/query.txt", "w") as fb:
-            fb.write(updated_query)
+            fb.write(full_query)
 
         return redirect("/view-records")
 
@@ -957,27 +976,6 @@ def fetch_records():
         traceback.print_exc()
         return jsonify({"message": "Failed to fetch records"}), 500
 
-
-@app.route("/export-data", methods=["GET"])
-def export_data():
-    query = ""
-    with open("/tmp/query.txt", "r") as fp:
-        query = fp.read()
-
-    print(query)
-
-    if query.strip() == "":
-        return jsonify({"message": "failed"}), 500
-
-    t1 = threading.Thread(target=call_cloud_function_for_data_processing, args=(query,))
-    t1.start()
-
-    return {
-        "message": "success",
-        "data": "Exported Data Procecssing started. You would be notified over email.",
-    }
-
-    # return response
 
 
 def call_cloud_function_for_data_processing(query):

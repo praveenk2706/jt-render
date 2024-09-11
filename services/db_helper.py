@@ -174,8 +174,6 @@ class BigQueryFetcher:
                 + "ORDER BY Property_State_Name, Property_County_Name, Property_City, Nearest_Road_Type"
             )
 
-            print(query)
-
             # Execute the query  into a Pandas DataFrame
             result_df = self.runQuery(queryString=query)
 
@@ -415,6 +413,24 @@ class CustomQueryBuilder:
 
     def is_valid_schema(self):
         return isinstance(self.schema, list) and len(self.schema) > 0
+    
+    def _build_boolean_query(self, field_name, filter_values):
+        if isinstance(filter_values, list):
+            # Check if the list contains only 'ALL'
+            if len(filter_values) == 1 and filter_values[0].upper() == "ALL":
+                return None  # Or return an empty string ''
+            elif len(filter_values) > 0:
+                filter_values = [f"{str(val).upper()}" for val in filter_values]
+                return f"{field_name} IN ({', '.join(filter_values)})"
+        elif isinstance(filter_values, str):
+            # Check if the string is 'ALL'
+            if filter_values.upper() == "ALL":
+                return None  # Or return an empty string ''
+            return f"{field_name} = {filter_values.upper()}"
+        else:
+            raise ValueError(
+                f"Invalid filter values format for STRING field {field_name}"
+            )
 
     def build_query(self, field_name, filter_values):
         try:
@@ -432,8 +448,10 @@ class CustomQueryBuilder:
                 return self._build_numeric_query(field_name, filter_values)
             elif field_name == "zip-code-matching":
                 return self._build_zip_code_matching_query(filter_values)
-            elif field_name == "Owners_Do_Not_Mail":
-                return self._build_do_not_mail_query(field_name, filter_values)
+            elif field_type == 'BOOLEAN':
+                return self._build_boolean_query(field_name, filter_values)
+            # elif field_name == "owner-do-not-mail":
+            #     return self._build_do_not_mail_query(field_name, filter_values)
             else:
                 raise ValueError(
                     f"Invalid field name {field_name} filter val {filter_values}"
@@ -502,7 +520,9 @@ class CustomQueryBuilder:
             raise ValueError(
                 f"Invalid filter values format for numeric field {field_name}"
             )
+        
 
+    
     def _build_zip_code_matching_query(self, filter_values):
         if isinstance(filter_values, list):
             list_els = [str(i).strip().lower() for i in filter_values]
@@ -513,25 +533,50 @@ class CustomQueryBuilder:
                 if len(list_els) == 1:
                     if "true" in list_els:
                         return (
-                            """(Property_Zip_Code = Mail_Zip_Code """
-                            + """OR Property_Zip_Code = Mail_Zip_Code_9 """
-                            + """OR Property_Zip_Code = Mail_Zip_Code_R """
-                            + """OR Property_Zip_Code = Mail_ZipCode_STD) """
+                           """(Property_Zip_Code = Mail_Zip_Code) """
+                        
                         )
                     else:
                         return (
-                            """(Property_Zip_Code != Mail_Zip_Code """
-                            + """AND Property_Zip_Code != Mail_Zip_Code_9 """
-                            + """AND Property_Zip_Code != Mail_Zip_Code_R """
-                            + """AND Property_Zip_Code != Mail_ZipCode_STD) """
+                           """(Property_Zip_Code != Mail_Zip_Code) """
+                       
+                          
                         )
                 else:
                     return ""
         else:
             raise ValueError("Invalid filter values format for Zip_Code_Matching query")
 
+    # def _build_zip_code_matching_query(self, filter_values):
+    #     if isinstance(filter_values, list):
+    #         list_els = [str(i).strip().lower() for i in filter_values]
+    #         if "all" in list_els or "select" in list_els:
+    #             return ""
+
+    #         else:
+    #             if len(list_els) == 1:
+    #                 if "true" in list_els:
+    #                     return (
+    #                        """(Property_Zip_Code = Mail_Zip_Code """
+    #                         + """OR Property_Zip_Code = Mail_Zip_Code_9 """
+    #                         + """OR Property_Zip_Code = Mail_Zip_Code_R """
+    #                         + """OR Property_Zip_Code = Mail_ZipCode_STD) """
+    #                     )
+    #                 else:
+    #                     return (
+    #                        """(Property_Zip_Code != Mail_Zip_Code """
+    #                         + """AND Property_Zip_Code != Mail_Zip_Code_9 """
+    #                         + """AND Property_Zip_Code != Mail_Zip_Code_R """
+    #                         + """AND Property_Zip_Code != Mail_ZipCode_STD) """
+    #                     )
+    #             else:
+    #                 return ""
+    #     else:
+    #         raise ValueError("Invalid filter values format for Zip_Code_Matching query")
+
     def _build_do_not_mail_query(self, field_name, filter_values):
-        if filter_values == "true":
+        print("called--------",filter_values, type(filter_values))
+        if filter_values == "True":
             return "EXISTS (SELECT 1 FROM `property-database-370200.Property_Dataset.Owners_Do_Not_Mail` As Owners_Do_Not_Mail WHERE JOINED.Owner_First_Name = Owners_Do_Not_Mail.name)"
         else:
             return ""

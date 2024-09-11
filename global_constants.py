@@ -107,6 +107,7 @@ field_schema_mapping = {
     "percent_square_area_cleaned": "percent_square_area_cleaned",
     "total_building_area": "total_building_area",
     "owner-name-type": "Owner_Name_Type",
+    "owner-do-not-mail": "Do_Not_Mail"
 }
 
 COUNT_ALL_QUERY_CACHED_KEY = "count-all-rows"

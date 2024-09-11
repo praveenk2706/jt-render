@@ -1,0 +1,21 @@
+Property_State_Name_Short,Property_County_Name,Property_Zip_Code,APN,Lot_Acreage,entry,reason,Per Acre Pricing - Value,State,County,Zip Code,APN Section,Starting Acreage,Ending Acreage
+AZ,Cochise,85643.0,209-56-084A,10.0,171,state and county and zip,600.0,AZ,Cochise,85643.0,305.0,87.0,250.99
+AZ,Cochise,85643.0,301-29-009,5.0,161,state and county and zip and apn,600.0,AZ,Cochise,85643.0,301.0,87.0,250.99
+AZ,Cochise,85606.0,305-56-003D,5.0,43,state and county and zip,1200.0,AZ,Cochise,85606.0,,81.0,350.99
+AZ,Cochise,85632.0,402-43-008,5.0,113,state and county and zip,500.0,AZ,Cochise,85632.0,,86.0,450.0
+AZ,Coconino,86047.0,R0028999,39.93,1748,only state and county,,AZ,Coconino,86023.0,,35.0,55.0
+AZ,Maricopa,85331.0,219-99-011-H,5.06,1639,only state and county,0.0,AZ,Maricopa,,,,
+AZ,Maricopa,85339.0,300-26-028-B,4.79,1639,only state and county,0.0,AZ,Maricopa,,,,
+AZ,Maricopa,85322.0,401-42-037-X,4.9,1639,only state and county,0.0,AZ,Maricopa,,,,
+AZ,Maricopa,85361.0,503-38-019-D,10.02,1639,only state and county,0.0,AZ,Maricopa,,,,
+AZ,Maricopa,85361.0,503-91-117,4.08,1639,only state and county,0.0,AZ,Maricopa,,,,
+AZ,Maricopa,85354.0,506-19-018-D,38.79,1639,only state and county,0.0,AZ,Maricopa,,,,
+AZ,Maricopa,85354.0,506-25-025-J,40.0,1639,only state and county,0.0,AZ,Maricopa,,,,
+AZ,Maricopa,85354.0,506-33-021-D,9.86,1639,only state and county,0.0,AZ,Maricopa,,,,
+AZ,Navajo,85928.0,201-22-012E,5.0,1581,state and county and zip,400.0,AZ,Navajo,85928.0,,90.0,450.99
+AZ,Pima,85742.0,216-32-1340,19.62,535,state and county and zip and acreage,13500.0,AZ,Pima,85742.0,,11.0,25.99
+AZ,Pima,85755.0,219-47-001H,3.31,558,state and county and zip and acreage,39500.0,AZ,Pima,85755.0,,2.0,5.99
+AZ,Pima,85641.0,305-28-0300,4.68,498,state and county and zip and acreage,9800.0,AZ,Pima,85641.0,,4.0,7.99
+AZ,Pinal,,509-20-024C,3.33,467,only state and county,9000.0,AZ,Pinal,,515.0,26.0,40.99
+AZ,Yavapai,86330.0,100-01-153G,5.17,1409,only state and county,1200.0,AZ,Yavapai,,502.0,81.0,450.99
+AZ,Yavapai,86332.0,202-13-137,36.01,1409,only state and county,1200.0,AZ,Yavapai,,502.0,81.0,450.99
