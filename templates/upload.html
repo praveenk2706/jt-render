@@ -3,11 +3,287 @@
 {% block title %}Upload File{% endblock %}
 
 {% block body %}
-<div class="container" style="text-align: center;">
-    <h1>Upload the CSV file processed by the Mail House</h1>
-    <form method="post" enctype="multipart/form-data">
-        <input type="file" name="file"><br><br>
-        <input type="submit" value="Upload">
+<div class="container">
+    <h1>Upload the CSV File for Processing</h1>
+    
+    <!-- Upload form -->
+    <form id="uploadForm" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <input type="file" name="file" id="fileInput" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-primary">Upload</button>
     </form>
+
+    <!-- Modal for selecting columns to merge -->
+    <div id="columnModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select Columns to Merge</h2>
+                <button id="closeModal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="mergeForm">
+                    <table id="columnListTable" class="table">
+                        <thead>
+                            <tr>
+                                <th>Main Column</th>
+                                <th>Select Columns to Merge</th>
+                            </tr>
+                        </thead>
+                        <tbody id="columnList"></tbody>
+                    </table>
+                    <div class="text-center">
+                        <button type="button" class="btn btn-success" id="mergeButton">Merge Columns</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table to display preview of CSV after merging -->
+    <div id="previewTable" style="display:none;">
+        <h2>Preview of Merged DataFrame</h2>
+        <div class="table-responsive">
+            <table id="preview" class="table">
+                <!-- Preview table populated dynamically with JS -->
+            </table>
+        </div>
+    </div>
 </div>
+
+<script>
+document.getElementById("closeModal").addEventListener("click", function() {
+    document.getElementById("columnModal").style.display = "none";
+});
+
+document.getElementById("uploadForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+    const formData = new FormData(this);
+
+    fetch("/upload_csv", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        const desiredColumns = [
+            'Owner_ID', 'Property_State_Name', 'Property_County_Name', 'APN', 
+            'Lot_Acreage', 'Market_Price', 'Offer_Price', 'Final_Offer_Price', 
+            'Owner_Full_Name', 'Owner_Last_Name', 'Owner_First_Name', 'Owner_Short_Name', 
+            'Owner_Name_Type', 'Mail_City', 'Mail_State', 'Mail_Street_Address', 
+            'Mail_Zip_Code', 'control_number', 'Mailer_Group', 'reference_number'
+        ];
+        
+        const columnList = document.getElementById("columnList");
+        columnList.innerHTML = ""; // Clear any existing data
+
+        desiredColumns.forEach((col) => {
+            const tr = document.createElement("tr");
+            const mainColTd = document.createElement("td");
+            mainColTd.innerText = col;
+            tr.appendChild(mainColTd);
+
+            const selectTd = document.createElement("td");
+            const select = document.createElement("select");
+            select.name = col;
+            select.classList.add("form-control");
+            select.multiple = true;
+
+            const defaultOption = document.createElement("option");
+            defaultOption.value = "";
+            defaultOption.innerText = "None";
+            select.appendChild(defaultOption);
+
+            data.columns.forEach(csvCol => {
+                const option = document.createElement("option");
+                option.value = csvCol;
+                option.innerText = csvCol;
+                select.appendChild(option);
+            });
+
+            selectTd.appendChild(select);
+            tr.appendChild(selectTd);
+
+            columnList.appendChild(tr);
+        });
+
+        document.getElementById("columnModal").style.display = "flex";
+    })
+    .catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+    });
+});
+
+document.getElementById("mergeButton").addEventListener("click", function() {
+    const mergeData = {};
+
+    const selects = document.querySelectorAll('select');
+    selects.forEach(select => {
+        const mainColumn = select.name;
+        const selectedColumns = Array.from(select.selectedOptions)
+                                     .map(option => option.value)
+                                     .filter(value => value !== "");
+        if (selectedColumns.length > 0) {
+            mergeData[mainColumn] = selectedColumns;
+        }
+    });
+
+    fetch("/merge_columns", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(mergeData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        const previewTable = document.getElementById("previewTable");
+        const preview = document.getElementById("preview");
+        preview.innerHTML = "";
+
+        const headerRow = document.createElement("tr");
+        data.headers.forEach(header => {
+            const th = document.createElement("th");
+            th.innerText = header;
+            headerRow.appendChild(th);
+        });
+        preview.appendChild(headerRow);
+
+        data.rows.forEach(row => {
+            const tr = document.createElement("tr");
+            row.forEach(cell => {
+                const td = document.createElement("td");
+                td.innerText = cell;
+                tr.appendChild(td);
+            });
+            preview.appendChild(tr);
+        });
+
+        previewTable.style.display = "block";
+        document.getElementById("columnModal").style.display = "none";
+    })
+    .catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+    });
+});
+
+</script>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f8f9fa;
+    }
+
+    .container {
+        max-width: 90%;
+        margin: auto;
+        padding: 20px;
+    }
+
+    .btn {
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        border: none;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        color: white;
+        border: none;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .table {
+        width: 100%;
+        margin-bottom: 1rem;
+        color: #212529;
+        border-collapse: collapse;
+    }
+
+    .table th, .table td {
+        padding: 8px;
+        border: 1px solid #dee2e6;
+    }
+
+    .modal {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        width: 70%;
+        max-width: 900px;
+        max-height: 80%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    .modal-body {
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .modal-content h2 {
+        margin: 0;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    @media (max-width: 768px) {
+        .modal-content {
+            width: 90%;
+        }
+    }
+</style>
 {% endblock %}

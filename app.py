@@ -1092,5 +1092,59 @@ def test_dropdown_ui():
     return render_template("dummy.html")
 
 
+
+uploaded_df = None  # Variable to store the uploaded DataFrame
+
+@app.route('/upload_csv', methods=['POST'])
+def upload_csv():
+    global uploaded_df
+    file = request.files['file']
+    
+    if file:
+        uploaded_df = pd.read_csv(file)
+        columns = list(uploaded_df.columns)
+        return jsonify({'columns': columns})
+    
+    return jsonify({'error': 'No file uploaded'}), 400
+
+@app.route('/merge_columns', methods=['POST'])
+def merge_columns():
+    global uploaded_df
+    try:
+        data = request.json  # Get the merge data from the frontend
+
+        if uploaded_df is not None:
+            # Create a local copy of the uploaded DataFrame
+            df_copy = uploaded_df.copy()
+
+            for main_column, columns_to_merge in data.items():
+                # Check if columns_to_merge exist in the DataFrame
+                if not all(col in df_copy.columns for col in columns_to_merge):
+                    return jsonify({'error': f"One or more columns to merge are missing in the DataFrame"}), 400
+                
+                # Merge selected columns into the main column
+                df_copy[main_column] = df_copy[columns_to_merge].apply(
+                    lambda row: ' '.join(row.dropna().astype(str)), axis=1
+                )
+
+                # Drop the merged columns
+                df_copy.drop(columns=columns_to_merge, inplace=True)
+
+            # Handle NaN values before sending response
+            headers = list(df_copy.columns)
+            rows = df_copy.head(10).fillna('').values.tolist()  # Replace NaN with empty string
+            
+            # Ensure that rows are in a format compatible with JSON
+            rows = [[str(cell) for cell in row] for row in rows]
+            
+            return jsonify({'headers': headers, 'rows': rows})
+
+        return jsonify({'error': 'No data to merge'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=8081)
