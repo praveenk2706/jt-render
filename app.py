@@ -779,7 +779,7 @@ def export_records():
                     "Lot_Acreage": lambda x: x.tolist(),
                     "Market_Price": lambda x: x.tolist(),
                     "Offer_Price": lambda x: x.tolist(),
-                    "Final_Offer_Price": lambda x: x.tolist(),
+                    # "Final_Offer_Price": lambda x: x.tolist(),
                     "Owner_Full_Name": "first",
                     "Owner_Last_Name": "first",
                     "Owner_First_Name": "first",
@@ -793,6 +793,15 @@ def export_records():
             )
             .reset_index()
         )
+
+        def calculate_final_offer_price(row):
+            total_offer_price = sum(row["Offer_Price"])  # Sum of all Offer_Price values in the group
+            random_amount = np.random.uniform(1.01, 99.99)  # Random amount between 1.01 and 99.99
+            return round(total_offer_price + random_amount, 2)  # Final Offer Price
+
+        # Apply the function to calculate Final_Offer_Price for each group
+        grouped_df["Final_Offer_Price"] = grouped_df.apply(calculate_final_offer_price, axis=1)
+
 
         # Step 5: Assign control numbers
         grouped_df = assign_control_numbers(grouped_df)

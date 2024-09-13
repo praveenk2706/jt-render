@@ -629,15 +629,15 @@ class PropertyRecordsPreProcessor:
         self.logger.debug("processing batch")
         processed_batch = df_batch.apply(self.find_price_per_acre, axis=1)
 
-        processed_batch["Offer_Price_Randomization"] = np.random.uniform(
-            1.01, 99.99, len(processed_batch)
-        )
-        processed_batch["Final_Offer_Price"] = (
-            processed_batch["Offer_Price"]
-            + processed_batch["Offer_Price_Randomization"]
-        )
-        processed_batch["Offer_Price_Randomization"] = processed_batch["Offer_Price_Randomization"].round(2)
-        processed_batch["Final_Offer_Price"] = processed_batch["Final_Offer_Price"].round(2)
+        # processed_batch["Offer_Price_Randomization"] = np.random.uniform(
+        #     1.01, 99.99, len(processed_batch)
+        # )
+        # processed_batch["Final_Offer_Price"] = (
+        #     processed_batch["Offer_Price"]
+        #     + processed_batch["Offer_Price_Randomization"]
+        # )
+        # processed_batch["Offer_Price_Randomization"] = processed_batch["Offer_Price_Randomization"].round(2)
+        # processed_batch["Final_Offer_Price"] = processed_batch["Final_Offer_Price"].round(2)
 
         return processed_batch
 

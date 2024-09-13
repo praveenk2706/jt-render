@@ -27,49 +27,44 @@
             <!-- State, County, City -->
             <div class="row form-group" style="margin: 2vh 2vw; padding: 2vh 2vw; background-color: bisque;">
                 <div class="col-md-2 property-state-div">
-                    
-
                     <label for="property-states"><b>Property State Name</b></label>
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-state" data-field="property-states">
                         <label class="form-check-label" for="include-null-state">Include Null</label>
                     </div>
-
-
+                    <button type="button" class="btn btn-link deselect-btn" data-select-id="state">Deselect All</button>
                     <select id="state" multiple size="5" name="property-states">
                         <!-- Options will be dynamically populated -->
                     </select>
-                    
-
+                   
                 </div>
+                
                 <div class="col-md-2 property-county-div">
-
                     <label for="property-counties"><b>Property County Name</b></label>
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-county" data-field="property-counties">
-                        <label class="form-check-label" for="include-null-state">Include Null</label>
+                        <label class="form-check-label" for="include-null-county">Include Null</label>
                     </div>
-
-
+                    <button type="button" class="btn btn-link deselect-btn" data-select-id="county">Deselect All</button>
                     <select id="county" multiple size="5" name="property-counties">
                         <!-- Options will be dynamically populated -->
                     </select>
-
+                  
                 </div>
+                
                 <div class="col-md-2 property-city-div">
-
                     <label for="property-cities"><b>Property City Name</b></label>
-                    
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-city" data-field="property-cities">
-                        <label class="form-check-label" for="include-null-state">Include Null</label>
+                        <label class="form-check-label" for="include-null-city">Include Null</label>
                     </div>
-
+                    <button type="button" class="btn btn-link deselect-btn" data-select-id="city">Deselect All</button>
                     <select id="city" multiple size="5" name="property-cities">
                         <!-- Options will be dynamically populated -->
                     </select>
-
+                   
                 </div>
+                
 
                 <!-- Owner Name Type -->
                 <div class="col-md-2">
@@ -81,6 +76,7 @@
                             <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-owner-name-type" data-field="owner-name-type">
                             <label class="form-check-label" for="include-null-state">Include Null</label>
                         </div>
+                        <button type="button" class="btn btn-link deselect-btn" data-select-id="owner-name-type">Deselect All</button>
                         <select name="owner-name-type" id="owner-name-type" class="form-control" multiple size="5">
                             <!-- Option to select all owner name types -->
                             <option value="all">All</option>
@@ -99,6 +95,7 @@
                             <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-zip-code-matching" data-field="zip-code-matching">
                             <label class="form-check-label" for="include-null-state">Include Null</label>
                         </div> -->
+                        <button type="button" class="btn btn-link deselect-btn" data-select-id="zip-code-matching">Deselect All</button>
                         <select name="zip-code-matching" id="zip-code-matching" size="5" class="form-control">
                             <option value="all">All</option>
                             <option value="True">True</option>
@@ -231,7 +228,7 @@
                          <label for="owner-do-not-mail">
                              <b>Owner Do not mail</b>
                          </label>
-                    
+                         <button type="button" class="btn btn-link deselect-btn" data-select-id="owner-do-not-mail">Deselect All</button>
                          <select name="owner-do-not-mail" id="owner-do-not-mail" size="5" class="form-control">
                              <option value="all">All</option>
                              <option value="True">True</option>
@@ -278,7 +275,7 @@
                             <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-nearest_road_types" data-field="nearest_road_types">
                             <label class="form-check-label" for="include-null-state">Include Null</label>
                         </div>
-
+                        <button type="button" class="btn btn-link deselect-btn" data-select-id="nearest_road_types">Deselect All</button>
                         <select name="nearest_road_types" id="nearest_road_types" class="form-control" multiple size="5"
                             style="width: 100%;">
                             <option value="all">Select All</option>
@@ -1442,6 +1439,20 @@ function getChangedFields() {
 
 
     });
+
+    // Attach click event listener to all 'Deselect All' buttons
+document.querySelectorAll('.deselect-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const selectId = this.getAttribute('data-select-id');
+        const selectElement = document.getElementById(selectId);
+        
+        // Deselect all options
+        for (let i = 0; i < selectElement.options.length; i++) {
+            selectElement.options[i].selected = false;
+        }
+    });
+});
+
 </script>
 
 {% endblock %}
