@@ -11,7 +11,7 @@
 </div>
 <div class="container">
     <h1>Upload the CSV File for Processing</h1>
-    
+
     <!-- Upload form -->
     <form id="uploadForm" method="post" enctype="multipart/form-data">
         <div class="form-group">
@@ -87,13 +87,13 @@ document.getElementById("uploadForm").addEventListener("submit", function(event)
     })
     .then(data => {
         const desiredColumns = [
-            'Owner_ID', 'Property_State_Name', 'Property_County_Name', 'APN', 
-            'Lot_Acreage', 'Market_Price', 'Offer_Price', 'Final_Offer_Price', 
-            'Owner_Full_Name', 'Owner_Last_Name', 'Owner_First_Name', 'Owner_Short_Name', 
-            'Owner_Name_Type', 'Mail_City', 'Mail_State', 'Mail_Street_Address', 
+            'Owner_ID', 'Property_State_Name', 'Property_County_Name', 'APN',
+            'Lot_Acreage', 'Market_Price', 'Offer_Price', 'Final_Offer_Price',
+            'Owner_Full_Name', 'Owner_Last_Name', 'Owner_First_Name', 'Owner_Short_Name',
+            'Owner_Name_Type', 'Mail_City', 'Mail_State', 'Mail_Street_Address',
             'Mail_Zip_Code', 'control_number', 'Mailer_Group', 'reference_number'
         ];
-        
+
         const columnList = document.getElementById("columnList");
         columnList.innerHTML = ""; // Clear any existing data
 
