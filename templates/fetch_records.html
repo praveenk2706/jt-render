@@ -1170,9 +1170,11 @@
                 } else {
                     console.error('Response data is missing or invalid:', response);
                 }
+                $('#spinner-overlay').css('display', 'none');
             },
             error: function (error) {
                 console.error('Error fetching filter values:', error);
+                $('#spinner-overlay').css('display', 'none');
             }
         });
     }
@@ -1217,6 +1219,7 @@
     }
 
     $(document).ready(function () {
+        $('#spinner-overlay').css('display', 'flex');
         populateNumericFilters();
         populateOwnerNameType();
 
@@ -1246,6 +1249,7 @@
         $('#fetch-results').show();
 
         populateFilterFields();
+      
 
         $('select').on('change', function () {
             let name = $(this).attr('name')

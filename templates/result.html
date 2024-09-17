@@ -4,15 +4,13 @@
 
 {% block body %}
 
-{% with messages = get_flashed_messages(with_categories=True) %}
-    {% if messages %}
-        <ul class="flash-messages">
-            {% for category, message in messages %}
-                <li class="{{ category }}">{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-{% endwith %}
+<!-- Spinner Overlay -->
+<div id="spinner-overlay" class="spinner-overlay" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Downloading... Please do not refresh the page.</span>
+    </div>
+</div>
+
 
 <div class="h1">Fetched Records: Paginated</div><br>
 
@@ -99,58 +97,91 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 
 <script type="text/javascript">
-    $(document).ready(function () {
-        var mailGroups = [];
+$(document).ready(function () {
+    var mailGroups = [];
 
-        // Show the modal when the export button is clicked
-        $('#export-data-btn').click(function () {
-            $('#exportModal').modal('show');
-        });
-
-        // Add mail group chip on Enter key press
-        $('#mail-groups').on('keypress', function (e) {
-            if (e.which === 13) {  // Enter key pressed
-                e.preventDefault();
-                var mailGroup = $(this).val().trim();
-                if (mailGroup !== "") {
-                    mailGroups.push(mailGroup);
-                    $('#mail-group-chips').append('<span class="badge badge-secondary mx-1">' + mailGroup + '</span>');
-                    $(this).val('');
-                }
-            }
-        });
-
-        // Handle form submission
-        $('#export-form').submit(function (e) {
-            e.preventDefault();
-            var campaignName = $('#campaign-name').val();
-            var marketPriceMin = $('#market-price-min').val();
-            var marketPriceMax = $('#market-price-max').val();
-
-            // Validate Market Price inputs
-            if (parseFloat(marketPriceMin) > parseFloat(marketPriceMax)) {
-                alert('Market Price Min cannot be greater than Market Price Max.');
-                return;
-            }
-
-            if (campaignName && mailGroups.length > 0) {
-                // Example: Initiating download
-                var exportUrl = `/export-records?query=your_query_here&mailGroups=${encodeURIComponent(mailGroups.join(','))}&marketPriceMin=${encodeURIComponent(marketPriceMin)}&marketPriceMax=${encodeURIComponent(marketPriceMax)}`;
-
-                var link = document.createElement('a');
-                link.href = exportUrl;
-                link.download = 'records.zip'; // Suggested filename for the downloaded file
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-
-                // Close the modal after submission
-                $('#exportModal').modal('hide');
-            } else {
-                alert('Please fill out all fields.');
-            }
-        });
+    // Show the modal when the export button is clicked
+    $('#export-data-btn').click(function () {
+        $('#exportModal').modal('show');
     });
+
+    // Add mail group chip on Enter key press
+    $('#mail-groups').on('keypress', function (e) {
+        if (e.which === 13) {  // Enter key pressed
+            e.preventDefault();
+            var mailGroup = $(this).val().trim();
+            if (mailGroup !== "") {
+                mailGroups.push(mailGroup);
+                $('#mail-group-chips').append('<span class="badge badge-secondary mx-1">' + mailGroup + '</span>');
+                $(this).val('');
+            }
+        }
+    });
+
+    // Handle form submission
+    $('#export-form').submit(function (e) {
+        e.preventDefault();
+        var campaignName = $('#campaign-name').val();
+        var marketPriceMin = $('#market-price-min').val();
+        var marketPriceMax = $('#market-price-max').val();
+
+        // Validate Market Price inputs
+        if (parseFloat(marketPriceMin) > parseFloat(marketPriceMax)) {
+            alert('Market Price Min cannot be greater than Market Price Max.');
+            return;
+        }
+
+        if (campaignName && mailGroups.length > 0) {
+            // Show the spinner overlay
+            $('#spinner-overlay').css('display', 'flex');
+
+            // Prepare data for AJAX request
+            var requestData = {
+                mailGroups: mailGroups.join(','),
+                marketPriceMin: marketPriceMin,
+                marketPriceMax: marketPriceMax
+            };
+
+            // Perform AJAX request
+            $.ajax({
+                url: '/export-records',
+                method: 'GET',
+                data: requestData,
+                xhrFields: {
+                    responseType: 'blob' // Important for handling binary data
+                },
+                success: function (data, status, xhr) {
+                    // Hide the spinner overlay
+                    $('#spinner-overlay').css('display', 'none');
+
+                    // Create a link element to initiate the download
+                    var link = document.createElement('a');
+                    link.href = window.URL.createObjectURL(data);
+                    link.download = 'records.zip'; // Suggested filename for the downloaded file
+                    document.body.appendChild(link);
+
+                    // Automatically click the link to trigger the download
+                    link.click();
+
+                    // Clean up
+                    document.body.removeChild(link);
+                },
+                error: function (xhr, status, error) {
+                    // Hide the spinner overlay and handle error
+                    $('#spinner-overlay').css('display', 'none');
+                    alert('An error occurred while exporting the records. Please try again.');
+                }
+            });
+
+            // Close the modal after submission
+            $('#exportModal').modal('hide');
+        } else {
+            alert('Please fill out all fields.');
+        }
+    });
+});
+
+
 </script>
 
 {% endblock %}

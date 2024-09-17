@@ -3,6 +3,12 @@
 {% block title %}Upload File{% endblock %}
 
 {% block body %}
+<!-- Spinner Overlay -->
+<div id="spinner-overlay" class="spinner-overlay" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Uploading...</span>
+    </div>
+</div>
 <div class="container">
     <h1>Upload the CSV File for Processing</h1>
     
@@ -48,10 +54,19 @@
                 <!-- Preview table populated dynamically with JS -->
             </table>
         </div>
+        <div class="text-center">
+            <button type="button" class="btn btn-primary" id="doneButton">Done</button>
+        </div>
     </div>
 </div>
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+<!-- Bootstrap JS -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 <script>
+let mergedFileData = null;
+
 document.getElementById("closeModal").addEventListener("click", function() {
     document.getElementById("columnModal").style.display = "none";
 });
@@ -171,12 +186,45 @@ document.getElementById("mergeButton").addEventListener("click", function() {
 
         previewTable.style.display = "block";
         document.getElementById("columnModal").style.display = "none";
+        mergedFileData = data; // Store the merged data for later use
     })
     .catch(error => {
         console.error('There was a problem with the fetch operation:', error);
     });
 });
 
+document.getElementById("doneButton").addEventListener("click", function() {
+    if (mergedFileData) {
+        $('#spinner-overlay').css('display', 'flex');
+        fetch("/upload_merged_csv", { // New endpoint to handle file upload
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(mergedFileData)
+        })
+        .then(response => {
+            $('#spinner-overlay').css('display', 'none');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            $('#spinner-overlay').css('display', 'none');
+            if (data.message) {
+                alert(data.message);
+            } else {
+                alert('Failed to upload the file to cloud storage');
+            }
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+        });
+    } else {
+        alert('No data to upload');
+    }
+});
 </script>
 
 <style>
