@@ -140,10 +140,11 @@ Export_Processor_URL = "https://us-central1-mail-engine-411414.cloudfunctions.ne
 # PDF_GENERATOR_URL = "http://localhost:8080"
 
 # prod
-# PDF_GENERATOR_URL = f"{CLOUD_API_GATEWAY_URL_BASE}/generate-pdf"
-PDF_GENERATOR_URL ="https://us-central1-mail-engine-411414.cloudfunctions.net/generate-v2"
+PDF_GENERATOR_URL = f"{CLOUD_API_GATEWAY_URL_BASE}/generate-pdf"
 
 
 CLOUD_STORAGE_CLIENT = CloudStorageHelper(store_location="Received_From_Mail_House")
 REMOTE_BUCKET_NAME_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE = "olmstead-property-letters"
 REMOTE_DIRECTORY_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE = "Received_From_Mail_House"
+
+NEW_REMOTE_DIRECTORY_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE = "Campaign-September"

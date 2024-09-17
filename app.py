@@ -34,6 +34,7 @@ from global_constants import (
     PDF_GENERATOR_URL,
     REMOTE_BUCKET_NAME_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE,
     REMOTE_DIRECTORY_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE,
+    NEW_REMOTE_DIRECTORY_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE,
     TREE_COVERAGE_CACHE_KEY,
     UPLOAD_FOLDER,
     WELLS_CACHE_KEY,
@@ -59,7 +60,9 @@ from services.filterer import (  # noqa: F401
     load_df,
 )
 from services.v2_pricing_helper import PropertyRecordsPreProcessor
+import tempfile
 
+from datetime import datetime
 print(sys.getrecursionlimit())
 sys.setrecursionlimit(10000)
 print(sys.getrecursionlimit())
@@ -209,6 +212,7 @@ def convert_to_int_list(str_list):
                 return []  # Return an empty list in case of a ValueError
     return converted_list
 
+
 @app.route("/query-count", methods=["POST"])
 def query_counts_after_filter():
     try:
@@ -266,7 +270,9 @@ def query_counts_after_filter():
 
                 # Check if the field has an include-null flag
                 include_null_key = f"{key}-include-null"
-                include_null = include_null_key in request_body and request_body[include_null_key]
+                include_null = (
+                    include_null_key in request_body and request_body[include_null_key]
+                )
 
                 if isinstance(value, dict) and ("min" in value or "max" in value):
                     filter_values = range_filter(key, value)
@@ -311,12 +317,16 @@ def query_counts_after_filter():
         """
 
         if outside_filters_query:
-            full_query += f"\nSELECT COUNT(*) AS CNT FROM A WHERE {outside_filters_query}"
+            full_query += (
+                f"\nSELECT COUNT(*) AS CNT FROM A WHERE {outside_filters_query}"
+            )
         else:
             full_query += f"\nSELECT COUNT(*) AS CNT FROM A"
 
         # For distinct owner count query
-        updated_query_owner = full_query.replace("COUNT(*) AS CNT", "COUNT(DISTINCT Owner_ID) AS CNT")
+        updated_query_owner = full_query.replace(
+            "COUNT(*) AS CNT", "COUNT(DISTINCT Owner_ID) AS CNT"
+        )
 
         # Log the final queries
         print(f"Full query: {full_query}")
@@ -346,7 +356,6 @@ def query_counts_after_filter():
             "error/page-500.html",
             context={"message": "Could not fetch records", "error": str(e)},
         )
-
 
 
 @app.route("/get-location-filters", methods=["GET"])
@@ -779,6 +788,7 @@ def export_records():
                     "Lot_Acreage": lambda x: x.tolist(),
                     "Market_Price": lambda x: x.tolist(),
                     "Offer_Price": lambda x: x.tolist(),
+                    "Property_Zip_Code": lambda x: x.tolist(),
                     # "Final_Offer_Price": lambda x: x.tolist(),
                     "Owner_Full_Name": "first",
                     "Owner_Last_Name": "first",
@@ -795,13 +805,18 @@ def export_records():
         )
 
         def calculate_final_offer_price(row):
-            total_offer_price = sum(row["Offer_Price"])  # Sum of all Offer_Price values in the group
-            random_amount = np.random.uniform(1.01, 99.99)  # Random amount between 1.01 and 99.99
+            total_offer_price = sum(
+                row["Offer_Price"]
+            )  # Sum of all Offer_Price values in the group
+            random_amount = np.random.uniform(
+                1.01, 99.99
+            )  # Random amount between 1.01 and 99.99
             return round(total_offer_price + random_amount, 2)  # Final Offer Price
 
         # Apply the function to calculate Final_Offer_Price for each group
-        grouped_df["Final_Offer_Price"] = grouped_df.apply(calculate_final_offer_price, axis=1)
-
+        grouped_df["Final_Offer_Price"] = grouped_df.apply(
+            calculate_final_offer_price, axis=1
+        )
 
         # Step 5: Assign control numbers
         grouped_df = assign_control_numbers(grouped_df)
@@ -885,7 +900,6 @@ def fetch_records():
             # else:
             filters[key] = value
 
-
         # Helper function to handle range filters
         def range_filter(field_name, field_value):
             return {
@@ -903,13 +917,11 @@ def fetch_records():
             include_null = False  # Track if we should include NULL condition
 
             if key == "zip-code-matching" and value is not None:
-
-              
                 sub_query = customQueryBuilderInstance.build_query(
                     field_name=key,
                     filter_values=value,
                 )
-            
+
             # if key == "owner-do-not-mail" and value is not None:
             #     print(key, "value--------", value)
             #     sub_query = customQueryBuilderInstance.build_query(
@@ -921,7 +933,9 @@ def fetch_records():
 
                 # Check if the field has an include-null flag
                 include_null_key = f"{key}-include-null"
-                include_null = include_null_key in request_body and request_body[include_null_key]
+                include_null = (
+                    include_null_key in request_body and request_body[include_null_key]
+                )
 
                 if isinstance(value, dict) and ("min" in value or "max" in value):
                     filter_values = range_filter(key, value)
@@ -956,7 +970,7 @@ def fetch_records():
         # Build the final query with WITH A AS block and outside WHERE clause
         null_checks_query = " AND ".join(null_checks)
         outside_filters_query = " AND ".join(outside_filters)
-        
+
         # Base query structure
         full_query = f"""
             WITH A AS (
@@ -984,7 +998,6 @@ def fetch_records():
         print(e)
         traceback.print_exc()
         return jsonify({"message": "Failed to fetch records"}), 500
-
 
 
 def call_cloud_function_for_data_processing(query):
@@ -1091,6 +1104,22 @@ def call_to_generate_pdf_cloud_function(file_name):
         print(f"Exception {e} while calling generate pdf cloud function")
 
 
+def call_to_generate_pdf_cloud_function_v2(file_path):
+    try:
+        response = requests.post(
+            PDF_GENERATOR_URL,
+            params={"api_key": CLOUD_API_GATEWAY_KEY},
+            json={
+                "file-path": file_path
+            },
+        )
+
+        print(response)
+        print(type(response))
+    except Exception as e:
+        traceback.print_exc()
+        print(f"Exception {e} while calling generate pdf cloud function")
+
 @app.route("/acknowledgment")
 def acknowledgment():
     return render_template("acknowledgment.html")
@@ -1101,22 +1130,23 @@ def test_dropdown_ui():
     return render_template("dummy.html")
 
 
-
 uploaded_df = None  # Variable to store the uploaded DataFrame
 
-@app.route('/upload_csv', methods=['POST'])
+
+@app.route("/upload_csv", methods=["POST"])
 def upload_csv():
     global uploaded_df
-    file = request.files['file']
-    
+    file = request.files["file"]
+
     if file:
         uploaded_df = pd.read_csv(file)
         columns = list(uploaded_df.columns)
-        return jsonify({'columns': columns})
-    
-    return jsonify({'error': 'No file uploaded'}), 400
+        return jsonify({"columns": columns})
 
-@app.route('/merge_columns', methods=['POST'])
+    return jsonify({"error": "No file uploaded"}), 400
+
+
+@app.route("/merge_columns", methods=["POST"])
 def merge_columns():
     global uploaded_df
     try:
@@ -1129,11 +1159,15 @@ def merge_columns():
             for main_column, columns_to_merge in data.items():
                 # Check if columns_to_merge exist in the DataFrame
                 if not all(col in df_copy.columns for col in columns_to_merge):
-                    return jsonify({'error': f"One or more columns to merge are missing in the DataFrame"}), 400
-                
+                    return jsonify(
+                        {
+                            "error": f"One or more columns to merge are missing in the DataFrame"
+                        }
+                    ), 400
+
                 # Merge selected columns into the main column
                 df_copy[main_column] = df_copy[columns_to_merge].apply(
-                    lambda row: ' '.join(row.dropna().astype(str)), axis=1
+                    lambda row: " ".join(row.dropna().astype(str)), axis=1
                 )
 
                 # Drop the merged columns
@@ -1141,17 +1175,80 @@ def merge_columns():
 
             # Handle NaN values before sending response
             headers = list(df_copy.columns)
-            rows = df_copy.head(10).fillna('').values.tolist()  # Replace NaN with empty string
-            
+            rows = (
+                df_copy.head(10).fillna("").values.tolist()
+            )  # Replace NaN with empty string
+
             # Ensure that rows are in a format compatible with JSON
             rows = [[str(cell) for cell in row] for row in rows]
-            
-            return jsonify({'headers': headers, 'rows': rows})
 
-        return jsonify({'error': 'No data to merge'}), 400
+            return jsonify({"headers": headers, "rows": rows})
+
+        return jsonify({"error": "No data to merge"}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
+
+
+@app.route("/upload_merged_csv", methods=["POST"])
+def upload_merged_csv():
+    global uploaded_df
+    try:
+        data = request.json
+
+        if not data:
+            return jsonify({"error": "No data to upload"}), 400
+
+        # Create DataFrame from the received data
+        headers = data['headers']
+        rows = data['rows']
+        df = pd.DataFrame(rows, columns=headers)
+
+        # Save to a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as temp_file:
+            temp_file_path = temp_file.name
+            df.to_csv(temp_file_path, index=False)
+
+        # Get current date and format it like "Sep-17-2024"
+        current_date = datetime.now().strftime("%b-%d-%Y")
+        # Update the directory name to "Campaign-Sep-17-2024"
+        campaign_directory = f"Campaign-{current_date}"
+
+        # Upload the file to cloud storage
+        file_path_absolute = pathlib.Path(temp_file_path).resolve()
+        file_path_absolute_string = str(file_path_absolute)
+
+        upload_result = CLOUD_STORAGE_CLIENT.upload_file_to_cloud_bucket(
+            bucket_name=REMOTE_BUCKET_NAME_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE,
+            destination_directory=campaign_directory,  # Use the dynamic directory name
+            file_name=os.path.basename(temp_file_path),
+            file_path_absolute=file_path_absolute_string,
+            uploadable_file_name=os.path.basename(temp_file_path),
+        )
+
+        print(upload_result)
+
+        os.remove(temp_file_path)
+
+        if upload_result:
+            # Create the file path in the cloud storage
+            cloud_file_path = f"{REMOTE_BUCKET_NAME_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE}/{campaign_directory}/{os.path.basename(temp_file_path)}"
+
+            # Start a thread to call the cloud function
+            print("Cloud storage upload result success")
+            print("Creating orphaned thread to make cloud function API call")
+            t1 = threading.Thread(
+                target=call_to_generate_pdf_cloud_function_v2,
+                args=(cloud_file_path,)
+            )
+            t1.start()
+
+            return jsonify({"message": f"File successfully uploaded to '{campaign_directory}' in cloud storage, and PDF generation is in progress. You will be notified via email once it's completed."}), 200
+        else:
+            return jsonify({"error": "Failed to upload file to cloud storage"}), 500
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 
