@@ -141,7 +141,7 @@ Export_Processor_URL = "https://us-central1-mail-engine-411414.cloudfunctions.ne
 
 # prod
 # PDF_GENERATOR_URL = f"{CLOUD_API_GATEWAY_URL_BASE}/generate-pdf"
-PDF_GENERATOR_URL ="https://us-central1-mail-engine-411414.cloudfunctions.net/generate"
+PDF_GENERATOR_URL ="https://us-central1-mail-engine-411414.cloudfunctions.net/generate-v2"
 
 
 CLOUD_STORAGE_CLIENT = CloudStorageHelper(store_location="Received_From_Mail_House")
