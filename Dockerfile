@@ -17,4 +17,4 @@ RUN pip install gunicorn
 EXPOSE 8081
 
 # Run Gunicorn as the WSGI server
-CMD ["gunicorn", "-w","1","-b", "0.0.0.0:8080", "app:app"]
+CMD ["gunicorn", "-w","1","-b", "0.0.0.0:8080", "--timeout", "3600", "app:app"]

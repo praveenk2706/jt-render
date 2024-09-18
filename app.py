@@ -64,7 +64,7 @@ from services.filterer import (  # noqa: F401
 from services.v2_pricing_helper import PropertyRecordsPreProcessor
 
 # print(sys.getrecursionlimit())
-sys.setrecursionlimit(10000)
+sys.setrecursionlimit(1000000)
 # print(sys.getrecursionlimit())
 
 app = Flask(__name__)

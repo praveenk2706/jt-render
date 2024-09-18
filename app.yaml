@@ -1,16 +1,16 @@
 runtime: python
 env: flex  # This specifies the Flexible Environment
 
-entrypoint: gunicorn --workers 1 --worker-class gevent --timeout 120 --log-level info --bind :$PORT app:app
+entrypoint: gunicorn --workers 1 --worker-class gevent --timeout 3600 --log-level info --bind :$PORT app:app
 
 resources:
   cpu: 4            # Adjust CPU as needed
   memory_gb: 8      # Adjust memory as needed
   disk_size_gb: 10  # Adjust disk size as needed
 
-automatic_scaling:
-  min_num_instances: 0
-  max_num_instances: 1
+# automatic_scaling:
+#   min_num_instances: 0
+#   max_num_instances: 1
 
 runtime_config:
   operating_system: "ubuntu22"
