@@ -10,16 +10,28 @@
 
 <div class="jumbotron" style="background-color: beige;">
     <div class="container" style="width: 100%;">
-        <div id="count-display" class="count-display container" style="width: 80%;">
-            <!-- Counts will be displayed here -->
-            <div class="row">
-                <div class="col count-rows" style="float: left;">
-                </div>
-                <div class="row count-owners" style="float: right;">
+        <div class="row">
+            <div class="col">
+                <button type="button" id="property-count" class="property-count btn btn-primary btn-sm">
+                    Count Properties
+                </button>
+            </div>
+            <div class="col count-rows" style="float: left;">
+                <!-- Property count will be displayed here -->
+            </div>
+            <div class="col count-owners" style="float: right;">
+                <!-- Distinct owners count will be displayed here -->
+            </div>
+            <div class="col">
+                <div class="container center" style="align-items: center; text-align: center;">
+                    <button type="submit" id="fetch-results" class="btn btn-success btn-sm">
+                        Fetch records
+                    </button>
                 </div>
             </div>
         </div>
     </div>
+    
     <div class="container filter-container"
         style="margin: 0 0; padding: 2vh 0; vertical-align: middle; text-align: center; max-width: 100%; width: 100%;">
         <form id="fetchRecordsForm" target="_blank">
@@ -939,7 +951,7 @@
     </form>
 
 
-    <div class="center">
+    <!-- <div class="center">
         <div class="row">
             <div class="col">
                 <button type="button" id="property-count" class="property-count btn btn-primary btn-sm">Count
@@ -953,7 +965,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
 
 </div>
 <div class="container" style="width: 100%;overflow-y: auto;">
@@ -1238,8 +1250,8 @@
         hideElementUsingClass('wetlands-div');
         hideElementUsingClass('slopes-div');
         hideElementUsingClass('count-display');
-        $('#property-count').hide();
-        $('#fetch-results').hide();
+        $('#property-count').show();
+        $('#fetch-results').show();
 
 
 
