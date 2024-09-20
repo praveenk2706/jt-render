@@ -59,7 +59,7 @@
                         <div id="mail-group-chips" class="mt-2"></div>
                     </div>
                     <!-- Market Price Inputs in One Row -->
-                   <div class="form-group">
+                   <!-- <div class="form-group">
                         <label class="d-block">Market Price</label>
                         <div class="form-row">
                             <div class="col">
@@ -69,7 +69,7 @@
                                 <input type="number" class="form-control" id="market-price-max" step="0.01" placeholder="Max" aria-label="Max Market Price">
                             </div>
                         </div>
-                    </div>
+                    </div> -->
 
                     <!-- Optional: Adjust column sizes as needed -->
                     <!--
@@ -122,14 +122,14 @@ $(document).ready(function () {
     $('#export-form').submit(function (e) {
         e.preventDefault();
         var campaignName = $('#campaign-name').val();
-        var marketPriceMin = $('#market-price-min').val();
-        var marketPriceMax = $('#market-price-max').val();
+        //  var marketPriceMin = $('#market-price-min').val();
+        // var marketPriceMax = $('#market-price-max').val();
 
         // Validate Market Price inputs
-        if (parseFloat(marketPriceMin) > parseFloat(marketPriceMax)) {
-            alert('Market Price Min cannot be greater than Market Price Max.');
-            return;
-        }
+        // if (parseFloat(marketPriceMin) > parseFloat(marketPriceMax)) {
+        //     alert('Market Price Min cannot be greater than Market Price Max.');
+        //     return;
+        // }
 
         if (campaignName && mailGroups.length > 0) {
             // Show the spinner overlay
@@ -138,8 +138,8 @@ $(document).ready(function () {
             // Prepare data for AJAX request
             var requestData = {
                 mailGroups: mailGroups.join(','),
-                marketPriceMin: marketPriceMin,
-                marketPriceMax: marketPriceMax
+                // marketPriceMin: marketPriceMin,
+                // marketPriceMax: marketPriceMax
             };
 
             // Perform AJAX request

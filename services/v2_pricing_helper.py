@@ -1,5 +1,6 @@
 import datetime
 import io
+import logging
 import random
 import traceback
 from concurrent.futures import ProcessPoolExecutor
@@ -39,14 +40,14 @@ class GoogleDriveFileReader:
             )
 
             # Configure the root logger to save logs to a file
-            # self.logger = logging.getLogger("GoogleDriveFileReader")
-            # self.logger.setLevel(logging.DEBUG)
-            # formatter = logging.Formatter(
-            #     "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            # )
-            # file_handler = logging.FileHandler(self.log_file_name)
-            # file_handler.setFormatter(formatter)
-            # self.logger.addHandler(file_handler)
+            self.logger = logging.getLogger("GoogleDriveFileReader")
+            self.logger.setLevel(logging.DEBUG)
+            formatter = logging.Formatter(
+                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            )
+            file_handler = logging.FileHandler(self.log_file_name)
+            file_handler.setFormatter(formatter)
+            self.logger.addHandler(file_handler)
 
             service_account_info_json = {
                 "type": "service_account",
@@ -62,20 +63,20 @@ class GoogleDriveFileReader:
                 "universe_domain": "googleapis.com",
             }
 
-            # self.logger.debug("creating service account credentials")
+            self.logger.debug("creating service account credentials")
 
             self._credentials = service_account.Credentials.from_service_account_info(
                 service_account_info_json
             )
 
-            # self.logger.debug("creating drive service")
+            self.logger.debug("creating drive service")
             self._service = build("sheets", "v4", credentials=self._credentials)
-            # self.logger.debug(type(self._service))
+            self.logger.debug(type(self._service))
 
         except Exception as e:
-            # self.logger.error(
-            #     f"Exception {str(e)} while creating drive service account"
-            # )
+            self.logger.error(
+                f"Exception {str(e)} while creating drive service account"
+            )
             traceback.print_exc()
 
     def download_pricing_research_file_locally(self):
@@ -94,10 +95,10 @@ class GoogleDriveFileReader:
             done = False
             while done is False:
                 status, done = downloader.next_chunk()
-                # self.logger.debug("Download %d%%." % int(status.progress() * 100))
+                self.logger.debug("Download %d%%." % int(status.progress() * 100))
 
         except Exception as e:
-            # self.logger.error(f"Exception {str(e)}")
+            self.logger.error(f"Exception {str(e)}")
             traceback.print_exc()
 
     @property
@@ -150,7 +151,7 @@ class PropertyRecordsPreProcessor:
         # "Property_State_Name_Short",
         "Property_Zip_Code",
         # "Property_City",
-        # "Property_Address_Full",
+        # "Property_Address_Full",        
         # "Owner_2_First_Name",
         # "Owner_2_Last_Name",
         # "Owner_Type",
@@ -188,14 +189,14 @@ class PropertyRecordsPreProcessor:
                 f"/tmp/Log-PropertyRecordsPreProcessor-{self.processing_start_date}.log"
             )
             # Configure the root logger to save logs to a file
-            # self.logger = logging.getLogger("PropertyRecordsPreProcessor")
-            # self.logger.setLevel(logging.DEBUG)
-            # formatter = logging.Formatter(
-            #     "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            # )
-            # file_handler = logging.FileHandler(self.log_file_name)
-            # file_handler.setFormatter(formatter)
-            # self.logger.addHandler(file_handler)
+            self.logger = logging.getLogger("PropertyRecordsPreProcessor")
+            self.logger.setLevel(logging.DEBUG)
+            formatter = logging.Formatter(
+                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            )
+            file_handler = logging.FileHandler(self.log_file_name)
+            file_handler.setFormatter(formatter)
+            self.logger.addHandler(file_handler)
             self._dataframe = dataframe
 
             self._dataframe = self._dataframe.drop(
@@ -250,7 +251,7 @@ class PropertyRecordsPreProcessor:
 
             # Check if pricing research data is successfully loaded
             if not isinstance(pricing_excel_file, pd.ExcelFile):
-                # self.logger.error("cannot load pricing research")
+                self.logger.error("cannot load pricing research")
                 return None
 
             self._pricing_research_for_state = {}
@@ -312,6 +313,7 @@ class PropertyRecordsPreProcessor:
     def _find_matching_row(
         self, pricing_data, state, county, zip_code, apn, lot_acreage, **kwargs
     ):
+        print(pricing_data)
         try:
             if (
                 pricing_data is None
@@ -329,6 +331,9 @@ class PropertyRecordsPreProcessor:
                 "nan",
             ):
                 zip_code = np.nan
+
+
+            
 
             # Create match tables
             state_match = pricing_data["State"].str.lower() == str(state).lower()
@@ -366,9 +371,9 @@ class PropertyRecordsPreProcessor:
             matching_rows = pricing_data[match_sum == max_match_count]
 
             if matching_rows.empty:
-                # self.logger.debug(
-                #     f"No match found for {state}, {county}, {zip_code}, {apn}, {lot_acreage}"
-                # )
+                self.logger.debug(
+                    f"No match found for {state}, {county}, {zip_code}, {apn}, {lot_acreage}"
+                )
                 return None
 
             # Sort by DataFrame index if no specific criterion is available
@@ -379,12 +384,13 @@ class PropertyRecordsPreProcessor:
 
             return best_match
 
-        except Exception:
-            # self.logger.warning(
-            #     f"Exception {str(find_matching_rows_exc)} while finding matching rows for {state} {county} {zip_code} {apn} {lot_acreage} "
-            # )
+        except Exception as find_matching_rows_exc:
+            self.logger.warning(
+                f"Exception {str(find_matching_rows_exc)} while finding matching rows for {state} {county} {zip_code} {apn} {lot_acreage} "
+            )
             traceback.print_exc()
             return None
+
 
     # Function to find price per acre and update Market Price
     def find_price_per_acre(self, row):
@@ -399,7 +405,8 @@ class PropertyRecordsPreProcessor:
         """
 
         try:
-            # self.logger.debug(f"Processing row: {row.name}")
+            
+            self.logger.debug(f"Processing row: {row.name}")
             # self.logger.debug(str(row["Property_State_Name_Short"]).strip().lower() if )
             sheet_name = ""
 
@@ -417,16 +424,16 @@ class PropertyRecordsPreProcessor:
                         "NORTH CAROLINA",
                         "NORTH-CAROLINA",
                         "NORTH_CAROLINA",
-                        "North Carolina",
+                        "North Carolina"
                     ]:
                         sheet_name = "NC"
 
-            # self.logger.debug(f"{row['Property_State_Name']} {sheet_name}")
+            self.logger.debug(f"{row['Property_State_Name']} {sheet_name}")
 
             pricing_data = self._pricing_research_for_state[sheet_name]
 
             # Extract pricing data for the state from Excel file
-            # self.logger.debug("extract pricing data")
+            self.logger.debug("extract pricing data")
 
             # Check if pricing data is valid
             if (
@@ -437,7 +444,7 @@ class PropertyRecordsPreProcessor:
                     and pricing_data.shape[0] <= 0
                 )
             ):
-                # self.logger.debug("pricing data invalid")
+                self.logger.debug("pricing data invalid")
                 # self.logger.debug(type(pricing_data))
                 # self.logger.debug(pricing_data)
                 return None
@@ -494,7 +501,7 @@ class PropertyRecordsPreProcessor:
                 owner_id=row["Owner_ID"],
             )
 
-            # self.logger.debug("--- matched row ----")
+            self.logger.debug("--- matched row ----")
 
             # check if matched_row is a valid pandas series
             # with a valid Per Acre
@@ -514,17 +521,17 @@ class PropertyRecordsPreProcessor:
                 )
                 and matched_row["Per Acre Pricing - Value"] > 0
             ):
-                # self.logger.debug("----matched_row is valid----")
+                self.logger.debug("----matched_row is valid----")
 
                 row["Price_per_Acre"] = round(
                     matched_row["Per Acre Pricing - Value"], 2
                 )
             else:
-                # self.logger.debug(
-                #     f"the calculation of pricing per acre from pricing research csv was inconclusive {state} {county} {apn} {zip_code} {lot_acreage} {type(matched_row)}"
-                # )
+                self.logger.debug(
+                    f"the calculation of pricing per acre from pricing research csv was inconclusive {state} {county} {apn} {zip_code} {lot_acreage} {type(matched_row)}"
+                )
                 # self.logger.debug(type(matched_row))
-                # # if isinstance(matched_row, pd.Series):
+                # if isinstance(matched_row, pd.Series):
                 #     self.logger.debug("Per Acre Pricing - Value" in matched_row.index)
                 #     self.logger.debug(not pd.isna(matched_row["Per Acre Pricing - Value"]))
                 #     self.logger.debug(type(matched_row["Per Acre Pricing - Value"]))
@@ -554,10 +561,10 @@ class PropertyRecordsPreProcessor:
             )
             return row
 
-        except Exception:
-            # self.logger.error(
-            #     f"Exception while calculating price per acre {str(find_price_per_acre_exception)}"
-            # )
+        except Exception as find_price_per_acre_exception:
+            self.logger.error(
+                f"Exception while calculating price per acre {str(find_price_per_acre_exception)}"
+            )
             traceback.print_exc()
 
         finally:
@@ -592,10 +599,10 @@ class PropertyRecordsPreProcessor:
                     row["Price_per_Acre"] * row["Lot_Acreage"], 2
                 )
 
-        except Exception:
-            # self.logger.error(
-            #     f"Exception while updating market price {str(update_market_price_exception)}"
-            # )
+        except Exception as update_market_price_exception:
+            self.logger.error(
+                f"Exception while updating market price {str(update_market_price_exception)}"
+            )
             traceback.print_exc()
 
         finally:
@@ -624,7 +631,7 @@ class PropertyRecordsPreProcessor:
         Returns:
             DataFrame: Processed batch with updated price per acre.
         """
-        # self.logger.debug("processing batch")
+        self.logger.debug("processing batch")
         processed_batch = df_batch.apply(self.find_price_per_acre, axis=1)
 
         # processed_batch["Offer_Price_Randomization"] = np.random.uniform(
@@ -827,10 +834,10 @@ class PropertyRecordsPreProcessor:
             # Check if the dataframe is valid
             if not self.is_valid_dataframe:
                 # Print information about the dataframe if it's invalid
-                # if isinstance(self._dataframe, pd.DataFrame):
-                #     # self.logger.debug(self._dataframe.shape)
-                # else:
-                #     # self.logger.debug(type(self._dataframe))
+                if isinstance(self._dataframe, pd.DataFrame):
+                    self.logger.debug(self._dataframe.shape)
+                else:
+                    self.logger.debug(type(self._dataframe))
 
                 # Return error message if the dataframe is invalid
                 return {"message": "failed", "error": "passed dataframe is invalid"}
@@ -869,10 +876,10 @@ class PropertyRecordsPreProcessor:
             # Combine results from each batch into a single DataFrame
             self._dataframe = pd.concat(result_batches)
 
-            # self.logger.debug("price per acre complete")
+            self.logger.debug("price per acre complete")
 
             return self._dataframe
-            # self.logger.debug("Randomly breaking the dataframe into testing groups")
+            self.logger.debug("Randomly breaking the dataframe into testing groups")
 
             print(self._dataframe.head(1).to_dict(orient="records"))
 
@@ -955,7 +962,7 @@ class PropertyRecordsPreProcessor:
             #                 print(f"Upload result {file_path} {upload_result}")
             #                 upload_locations.append(upload_result.strip())
 
-            # self.logger.debug(
+            #                 self.logger.debug(
             #                     "exported manipulated version, return success status to initiate email notification"
             #                 )
 
@@ -994,110 +1001,110 @@ class PropertyRecordsPreProcessor:
                     return None
 
             # upload the missed properties.
-            # missed_properties = find_missed_properties_files()
-            # if (
-            #     missed_properties is not None
-            #     and isinstance(missed_properties, list)
-            #     and len(missed_properties) > 0
-            #     and all(
-            #         isinstance(item, tuple)
-            #         and len(item) == 2
-            #         and all(isinstance(element, str) for element in item)
-            #         for item in missed_properties
-            #     )
-            # ):
-            # self.logger.debug(
-            #     "Validation successful. All missed properties file items are correctly formatted."
-            # )
+            missed_properties = find_missed_properties_files()
+            if (
+                missed_properties is not None
+                and isinstance(missed_properties, list)
+                and len(missed_properties) > 0
+                and all(
+                    isinstance(item, tuple)
+                    and len(item) == 2
+                    and all(isinstance(element, str) for element in item)
+                    for item in missed_properties
+                )
+            ):
+                self.logger.debug(
+                    "Validation successful. All missed properties file items are correctly formatted."
+                )
 
-            # for index, item in enumerate(missed_properties):
-            # self.logger.debug(
-            #         f"Upload missed properties csv {item} at index {index}"
-            #     )
+                # for index, item in enumerate(missed_properties):
+                #     self.logger.debug(
+                #         f"Upload missed properties csv {item} at index {index}"
+                #     )
 
-            #     (
-            #         missed_properties_file_path_absolute_string,
-            #         missed_properties_file_name,
-            #     ) = (item[0], item[1])
+                #     (
+                #         missed_properties_file_path_absolute_string,
+                #         missed_properties_file_name,
+                #     ) = (item[0], item[1])
 
-            #     missed_properties_upload_result = (
-            #         self.upload_file_to_cloud_storage_bucket(
-            #             file_name=missed_properties_file_name,
-            #             file_path=missed_properties_file_path_absolute_string,
-            #         )
-            #     )
+                #     missed_properties_upload_result = (
+                #         self.upload_file_to_cloud_storage_bucket(
+                #             file_name=missed_properties_file_name,
+                #             file_path=missed_properties_file_path_absolute_string,
+                #         )
+                #     )
 
-            #     print(
-            #         f"Missed properties upload result {missed_properties_upload_result}"
-            #     )
+                #     print(
+                #         f"Missed properties upload result {missed_properties_upload_result}"
+                #     )
 
-            #     def find_log_files(directory="/tmp"):
-            #         try:
-            #             # Define the path to the directory
-            #             path = Path(directory)
+                def find_log_files(directory="/tmp"):
+                    try:
+                        # Define the path to the directory
+                        path = Path(directory)
 
-            #             # Find all log files
-            #             log_files = path.glob("*.log")
+                        # Find all log files
+                        log_files = path.glob("*.log")
 
-            #             # Create a list of tuples with absolute path and file name
-            #             result = [
-            #                 (str(file.resolve()), file.name) for file in log_files
-            #             ]
+                        # Create a list of tuples with absolute path and file name
+                        result = [
+                            (str(file.resolve()), file.name) for file in log_files
+                        ]
 
-            #             return result
+                        return result
 
-            #         except Exception as e:
-            #             print(f"Exception {e} while searching for log files")
-            #             traceback.print_exception()
+                    except Exception as e:
+                        print(f"Exception {e} while searching for log files")
+                        traceback.print_exception()
 
-            #             return None
+                        return None
 
-            #     # Find the log files
-            #     log_files = find_log_files()
+                # Find the log files
+                log_files = find_log_files()
 
-            #     # Validate the result
-            #     if (
-            #         log_files is not None
-            #         and isinstance(log_files, list)
-            #         and len(log_files) > 0
-            #         and all(
-            #             isinstance(item, tuple)
-            #             and len(item) == 2
-            #             and all(isinstance(element, str) for element in item)
-            #             for item in log_files
-            #         )
-            #     ):
-            #         print(
-            #             "Validation successful. All log file items are correctly formatted."
-            #         )
-            #         # Iterate over the list and process the log files
-            #         for log_file in log_files:
-            #             log_file_absolute_path, log_file_name = log_file
-            #             print(
-            #                 f"Log file: {log_file_name}, Absolute path: {log_file_absolute_path}"
-            #             )
-            #             upload_log_file_result = (
-            #                 self.upload_log_to_cloud_storage_bucket(
-            #                     file_name=log_file_name,
-            #                     file_path=log_file_absolute_path,
-            #                 )
-            #             )
+                # Validate the result
+                if (
+                    log_files is not None
+                    and isinstance(log_files, list)
+                    and len(log_files) > 0
+                    and all(
+                        isinstance(item, tuple)
+                        and len(item) == 2
+                        and all(isinstance(element, str) for element in item)
+                        for item in log_files
+                    )
+                ):
+                    print(
+                        "Validation successful. All log file items are correctly formatted."
+                    )
+                    # Iterate over the list and process the log files
+                    for log_file in log_files:
+                        log_file_absolute_path, log_file_name = log_file
+                        print(
+                            f"Log file: {log_file_name}, Absolute path: {log_file_absolute_path}"
+                        )
+                        upload_log_file_result = (
+                            self.upload_log_to_cloud_storage_bucket(
+                                file_name=log_file_name,
+                                file_path=log_file_absolute_path,
+                            )
+                        )
 
-            #             print(f"Log file upload result {upload_log_file_result}")
-            #     else:
-            #         print(
-            #             "Validation failed. The returned result is not correctly formatted."
-            #         )
+                        print(f"Log file upload result {upload_log_file_result}")
+                else:
+                    print(
+                        "Validation failed. The returned result is not correctly formatted."
+                    )
 
-            # return {
-            #     "message": "success",
-            #     "file_names": file_names,
-            #     "storage_locations": upload_locations,
-            #     "download_urls": signed_urls,
-            # }
+            return {
+                "message": "success",
+                "file_names": file_names,
+                "storage_locations": upload_locations,
+                "download_urls": signed_urls,
+            }
 
         except Exception as preprocessing_exception:
-            # self.logger.error(f"Exception {str(preprocessing_exception)}")
+            self.logger.error(f"Exception {str(preprocessing_exception)}")
             traceback.print_exc()
 
             return {"message": "failed", "error": str(preprocessing_exception)}
@@ -1142,12 +1149,12 @@ class PropertyRecordsPreProcessor:
 
     def upload_file_to_cloud_storage_bucket(self, file_name, file_path):
         try:
-            # self.logger.debug(
-            #     f"Attempting to upload {file_name} existing at {file_path} to cloud storage"
-            # )
+            self.logger.debug(
+                f"Attempting to upload {file_name} existing at {file_path} to cloud storage"
+            )
             client = self.create_cloud_storage_client()
             if client is None:
-                raise Exception("Cannot create cloud storage client")
+                raise Exception(f"Cannot create cloud storage client")
 
             # storage client is created.
             # attempt upload.
@@ -1157,28 +1164,28 @@ class PropertyRecordsPreProcessor:
 
             new_file_name = str(file_name).strip("./").strip("/tmp/")
 
-            # self.logger.debug("Attempt to create blob")
+            self.logger.debug("Attempt to create blob")
 
-            # self.logger.debug(f"storage location = {destination_directory}/{file_name}")
+            self.logger.debug(f"storage location = {destination_directory}/{file_name}")
 
             # create a blob for the file.
             blob = self._storage_client.bucket(bucket_name=bucket_name).blob(
                 f"{destination_directory}/{new_file_name}"
             )
 
-            # self.logger.debug(f"Attempt to upload file at {file_path}")
+            self.logger.debug(f"Attempt to upload file at {file_path}")
 
             # upload the blob using the file
             blob.upload_from_filename(f"{file_path}")
 
-            # self.logger.debug(
-            #     f"{file_name} existing at {file_path} uploaded to bucket {bucket_name} at destination {destination_directory}"
-            # )
+            self.logger.debug(
+                f"{file_name} existing at {file_path} uploaded to bucket {bucket_name} at destination {destination_directory}"
+            )
             return f"{bucket_name}/{destination_directory}/{new_file_name}"
 
         except Exception as e:
             traceback.print_exc()
-            # self.logger.error(f"Could not upload file {file_name} to cloud storage")
+            self.logger.error(f"Could not upload file {file_name} to cloud storage")
 
             return None
 
@@ -1196,9 +1203,9 @@ class PropertyRecordsPreProcessor:
                 else file_name
             )
 
-            # # self.logger.debug(
-            #     f"Attempting to create signed url for {file_name} existing at {file_path} to cloud storage"
-            # )
+            self.logger.debug(
+                f"Attempting to create signed url for {file_name} existing at {file_path} to cloud storage"
+            )
             if hasattr(self, "_storage_client") and self._storage_client is None:
                 self.create_cloud_storage_client()
             else:
@@ -1215,52 +1222,52 @@ class PropertyRecordsPreProcessor:
             return url
 
         except Exception as e:
-            # self.logger.error(f"Exception {e} in generating signed URL for {file_name}")
+            self.logger.error(f"Exception {e} in generating signed URL for {file_name}")
             return None
 
-    # def upload_log_to_cloud_storage_bucket(self, file_name=None, file_path=None):
-    #     try:
-    #         if file_name is None:
-    #             file_name = self.log_file_name
+    def upload_log_to_cloud_storage_bucket(self, file_name=None, file_path=None):
+        try:
+            if file_name is None:
+                file_name = self.log_file_name
 
-    #         # self.logger.debug(
-    #         #     f"Attempting to upload {file_name} existing at {file_path} to cloud storage"
-    #         # )
-    #         if hasattr(self, "_storage_client") and self._storage_client is None:
-    #             self.create_cloud_storage_client()
-    #         else:
-    #             self.create_cloud_storage_client()
-    #         # storage client is created.
-    #         # attempt upload.
-    #         bucket_name = "olmstead-property-letters"
+            self.logger.debug(
+                f"Attempting to upload {file_name} existing at {file_path} to cloud storage"
+            )
+            if hasattr(self, "_storage_client") and self._storage_client is None:
+                self.create_cloud_storage_client()
+            else:
+                self.create_cloud_storage_client()
+            # storage client is created.
+            # attempt upload.
+            bucket_name = "olmstead-property-letters"
 
-    #         destination_directory = "Export_For_Mail_House/logs"
+            destination_directory = "Export_For_Mail_House/logs"
 
-    #         # self.logger.debug("Attempt to create blob")
+            self.logger.debug("Attempt to create blob")
 
-    #         # self.logger.debug(f"storage location = {destination_directory}/{file_name}")
+            self.logger.debug(f"storage location = {destination_directory}/{file_name}")
 
-    #         # create a blob for the file.
-    #         blob = self._storage_client.bucket(bucket_name=bucket_name).blob(
-    #             f"{destination_directory}/{file_name.strip('./')}"
-    #         )
+            # create a blob for the file.
+            blob = self._storage_client.bucket(bucket_name=bucket_name).blob(
+                f"{destination_directory}/{file_name.strip('./')}"
+            )
 
-    #         # self.logger.debug(f"Attempt to upload file at {file_path}")
+            self.logger.debug(f"Attempt to upload file at {file_path}")
 
-    #         # upload the blob using the file
-    #         blob.upload_from_filename(f"{file_path}")
+            # upload the blob using the file
+            blob.upload_from_filename(f"{file_path}")
 
-    #         # self.logger.debug(
-    #         #     f"{file_name} existing at {file_path} uploaded to bucket {bucket_name} at destination {destination_directory}"
-    #         # )
-    #         Path(file_path).unlink()
-    #         return f"{bucket_name}/{destination_directory}/{file_name}"
+            self.logger.debug(
+                f"{file_name} existing at {file_path} uploaded to bucket {bucket_name} at destination {destination_directory}"
+            )
+            Path(file_path).unlink()
+            return f"{bucket_name}/{destination_directory}/{file_name}"
 
-    #     except Exception as e:
-    #         traceback.print_exc()
-    #         # self.logger.error(f"Could not upload file {file_name} to cloud storage")
+        except Exception as e:
+            traceback.print_exc()
+            self.logger.error(f"Could not upload file {file_name} to cloud storage")
 
-    #         return None
+            return None
 
 
 class UploadFileToCloudStorage:
@@ -1302,9 +1309,9 @@ class UploadFileToCloudStorage:
 
     def upload_file_to_cloud_storage_bucket(self, file_name, file_path):
         try:
-            # self.logger.debug(
-            #     f"Attempting to upload {file_name} existing at {file_path} to cloud storage"
-            # )
+            self.logger.debug(
+                f"Attempting to upload {file_name} existing at {file_path} to cloud storage"
+            )
             if hasattr(self, "_storage_client") and self._storage_client is None:
                 self.create_cloud_storage_client()
             else:
@@ -1315,23 +1322,23 @@ class UploadFileToCloudStorage:
 
             destination_directory = "Received_From_Mail_House"
 
-            # self.logger.debug("Attempt to create blob")
+            self.logger.debug("Attempt to create blob")
 
-            # self.logger.debug(f"storage location = {destination_directory}/{file_name}")
+            self.logger.debug(f"storage location = {destination_directory}/{file_name}")
 
             # create a blob for the file.
             blob = self._storage_client.bucket(bucket_name=bucket_name).blob(
                 f"{destination_directory}/{file_name.strip('./')}"
             )
 
-            # self.logger.debug(f"Attempt to upload file at {file_path}")
+            self.logger.debug(f"Attempt to upload file at {file_path}")
 
             # upload the blob using the file
             blob.upload_from_filename(f"{file_path}")
 
-            # self.logger.debug(
-            #     f"{file_name} existing at {file_path} uploaded to bucket {bucket_name} at destination {destination_directory}"
-            # )
+            self.logger.debug(
+                f"{file_name} existing at {file_path} uploaded to bucket {bucket_name} at destination {destination_directory}"
+            )
             return f"{bucket_name}/{destination_directory}/{file_name}"
 
         except Exception as e:

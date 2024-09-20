@@ -10,28 +10,16 @@
 
 <div class="jumbotron" style="background-color: beige;">
     <div class="container" style="width: 100%;">
-        <div class="row">
-            <div class="col">
-                <button type="button" id="property-count" class="property-count btn btn-primary btn-sm">
-                    Count Properties
-                </button>
-            </div>
-            <div class="col count-rows" style="float: left;">
-                <!-- Property count will be displayed here -->
-            </div>
-            <div class="col count-owners" style="float: right;">
-                <!-- Distinct owners count will be displayed here -->
-            </div>
-            <div class="col">
-                <div class="container center" style="align-items: center; text-align: center;">
-                    <button type="submit" id="fetch-results" class="btn btn-success btn-sm">
-                        Fetch records
-                    </button>
+        <div id="count-display" class="count-display container" style="width: 80%;">
+            <!-- Counts will be displayed here -->
+            <div class="row">
+                <div class="col count-rows" style="float: left;">
+                </div>
+                <div class="row count-owners" style="float: right;">
                 </div>
             </div>
         </div>
     </div>
-    
     <div class="container filter-container"
         style="margin: 0 0; padding: 2vh 0; vertical-align: middle; text-align: center; max-width: 100%; width: 100%;">
         <form id="fetchRecordsForm" target="_blank">
@@ -39,44 +27,49 @@
             <!-- State, County, City -->
             <div class="row form-group" style="margin: 2vh 2vw; padding: 2vh 2vw; background-color: bisque;">
                 <div class="col-md-2 property-state-div">
+                    
+
                     <label for="property-states"><b>Property State Name</b></label>
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-state" data-field="property-states">
                         <label class="form-check-label" for="include-null-state">Include Null</label>
                     </div>
-                    <button type="button" class="btn btn-link deselect-btn" data-select-id="state">Deselect All</button>
+
+
                     <select id="state" multiple size="5" name="property-states">
                         <!-- Options will be dynamically populated -->
                     </select>
-                   
+                    
+
                 </div>
-                
                 <div class="col-md-2 property-county-div">
+
                     <label for="property-counties"><b>Property County Name</b></label>
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-county" data-field="property-counties">
-                        <label class="form-check-label" for="include-null-county">Include Null</label>
+                        <label class="form-check-label" for="include-null-state">Include Null</label>
                     </div>
-                    <button type="button" class="btn btn-link deselect-btn" data-select-id="county">Deselect All</button>
+
+
                     <select id="county" multiple size="5" name="property-counties">
                         <!-- Options will be dynamically populated -->
                     </select>
-                  
+
                 </div>
-                
                 <div class="col-md-2 property-city-div">
+
                     <label for="property-cities"><b>Property City Name</b></label>
+                    
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-city" data-field="property-cities">
-                        <label class="form-check-label" for="include-null-city">Include Null</label>
+                        <label class="form-check-label" for="include-null-state">Include Null</label>
                     </div>
-                    <button type="button" class="btn btn-link deselect-btn" data-select-id="city">Deselect All</button>
+
                     <select id="city" multiple size="5" name="property-cities">
                         <!-- Options will be dynamically populated -->
                     </select>
-                   
+
                 </div>
-                
 
                 <!-- Owner Name Type -->
                 <div class="col-md-2">
@@ -88,7 +81,6 @@
                             <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-owner-name-type" data-field="owner-name-type">
                             <label class="form-check-label" for="include-null-state">Include Null</label>
                         </div>
-                        <button type="button" class="btn btn-link deselect-btn" data-select-id="owner-name-type">Deselect All</button>
                         <select name="owner-name-type" id="owner-name-type" class="form-control" multiple size="5">
                             <!-- Option to select all owner name types -->
                             <option value="all">All</option>
@@ -103,11 +95,10 @@
                         <label for="zip-code-matching">
                             <b>Zip Code Matching</b>
                         </label>
-                        <!-- <div class="form-check">
+                        <div class="form-check">
                             <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-zip-code-matching" data-field="zip-code-matching">
                             <label class="form-check-label" for="include-null-state">Include Null</label>
-                        </div> -->
-                        <button type="button" class="btn btn-link deselect-btn" data-select-id="zip-code-matching">Deselect All</button>
+                        </div>
                         <select name="zip-code-matching" id="zip-code-matching" size="5" class="form-control">
                             <option value="all">All</option>
                             <option value="True">True</option>
@@ -115,27 +106,6 @@
                         </select>
                     </div>
                 </div>
-
-                 <!-- Lot Acreage -->
-                 <div class="col-md-2">
-                    <div class="market_price-div container">
-
-                        <label for="market_price-min">
-                            <b>Market Price</b>
-                        </label>
-                         <div class="form-check">
-                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-market_price" data-field="market_price">
-                            <label class="form-check-label" for="include-null-state">Include Null</label>
-                        </div>
-                        <input type="number" name="market_price-min" id="market_price-min" class="form-control"
-                            placeholder="Min" style="width: 100%;">
-                        <input type="number" name="market_price-max" id="market_price-max" class="form-control"
-                            placeholder="Max" style="width: 100%; margin-top: 8px;">
-                    </div>
-                </div>
-
-                
-              
 
                 <!-- Lot Acreage -->
                 <div class="col-md-2">
@@ -208,7 +178,7 @@
                 </div>
 
                  <!-- Building_square_footage -->
-                <!-- <div class="col-md-2">
+                <div class="col-md-2">
                     <div class="building_square_footage-div container">
                         <label for="building_square_footage-min">Building_square_footage</label>
                          <div class="form-check">
@@ -220,7 +190,7 @@
                         <input type="number" name="building_square_footage-max" id="building_square_footage_max-max"
                             class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
                     </div>
-                </div>  -->
+                </div>
 
                 <!-- Largest_building -->
                 <div class="col-md-2">
@@ -238,7 +208,7 @@
                 </div>
 
                  <!-- Percent_square_area_cleaned -->
-                <!-- <div class="col-md-2">
+                <div class="col-md-2">
                     <div class="percent_square_area_cleaned-div container">
                         <label for="percent_square_area_cleaned-min">Percent_square_area_cleaned</label>
                         <div class="form-check">
@@ -250,22 +220,7 @@
                         <input type="number" name="percent_square_area_cleaned-max" id="percent_square_area_cleaned-max"
                             class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
                     </div>
-                </div> -->
-
-                     <!-- Owner Do not mail -->
-                <div class="col-md-2">
-                     <div class="owner-do-not-mail-div container">
-                         <label for="owner-do-not-mail">
-                             <b>Owner Do not mail</b>
-                         </label>
-                         <button type="button" class="btn btn-link deselect-btn" data-select-id="owner-do-not-mail">Deselect All</button>
-                         <select name="owner-do-not-mail" id="owner-do-not-mail" size="5" class="form-control">
-                             <option value="all">All</option>
-                             <option value="True">True</option>
-                             <option value="False">False</option>
-                         </select>
-                     </div>
-                 </div>
+                </div>
 
                 <!-- Total_building_area -->
                 <div class="col-md-2">
@@ -281,9 +236,6 @@
                             class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
                     </div>
                 </div>
-
-
-             
 
 
 
@@ -305,7 +257,7 @@
                             <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-nearest_road_types" data-field="nearest_road_types">
                             <label class="form-check-label" for="include-null-state">Include Null</label>
                         </div>
-                        <button type="button" class="btn btn-link deselect-btn" data-select-id="nearest_road_types">Deselect All</button>
+
                         <select name="nearest_road_types" id="nearest_road_types" class="form-control" multiple size="5"
                             style="width: 100%;">
                             <option value="all">Select All</option>
@@ -338,7 +290,7 @@
                 </div>
 
                 <!-- Road Frontage -->
-                <!-- <div class="col-md-2">
+                <div class="col-md-2">
                     <div class="road_frontage-div container">
 
                         <label for="road_frontage-min">Road Frontage</label>
@@ -354,7 +306,7 @@
                             placeholder="Max" style="width: 100%; margin-top: 8px;">
 
                     </div>
-                </div> -->
+                </div>
 
                 <!-- Trees Percentage -->
                 <div class="col-md-2">
@@ -802,7 +754,7 @@
 
 
                 <!-- Percent_rectangle_area_cleaned -->
-                <!-- <div class="col-md-2">
+                <div class="col-md-2">
                     <div class="percent_rectangle_area_cleaned-div container">
                         <label for="percent_rectangle_area_cleaned-min">Percent_rectangle_area_cleaned</label>
                           <div class="form-check">
@@ -816,7 +768,7 @@
                             id="percent_rectangle_area_cleaned-max" class="form-control" placeholder="Max"
                             style="width: 100%; margin-top: 8px;">
                     </div>
-                </div> -->
+                </div>
 
 
                
@@ -969,7 +921,7 @@
     </form>
 
 
-    <!-- <div class="center">
+    <div class="center">
         <div class="row">
             <div class="col">
                 <button type="button" id="property-count" class="property-count btn btn-primary btn-sm">Count
@@ -983,7 +935,7 @@
                 </div>
             </div>
         </div>
-    </div> -->
+    </div>
 
 </div>
 <div class="container" style="width: 100%;overflow-y: auto;">
@@ -1200,11 +1152,9 @@
                 } else {
                     console.error('Response data is missing or invalid:', response);
                 }
-                $('#spinner-overlay').css('display', 'none');
             },
             error: function (error) {
                 console.error('Error fetching filter values:', error);
-                $('#spinner-overlay').css('display', 'none');
             }
         });
     }
@@ -1249,7 +1199,6 @@
     }
 
     $(document).ready(function () {
-        $('#spinner-overlay').css('display', 'flex');
         populateNumericFilters();
         populateOwnerNameType();
 
@@ -1268,8 +1217,8 @@
         hideElementUsingClass('wetlands-div');
         hideElementUsingClass('slopes-div');
         hideElementUsingClass('count-display');
-        $('#property-count').show();
-        $('#fetch-results').show();
+        $('#property-count').hide();
+        $('#fetch-results').hide();
 
 
 
@@ -1279,7 +1228,6 @@
         $('#fetch-results').show();
 
         populateFilterFields();
-      
 
         $('select').on('change', function () {
             let name = $(this).attr('name')
@@ -1305,21 +1253,13 @@
         captureInitialData()
 
         // Function to get changed fields
-function getChangedFields() {
+    function getChangedFields() {
     var formData = $('#fetchRecordsForm').serializeArray();
     var fieldMap = {};
-    var changedFields = [];
 
     // Iterate through the serialized array and build the field map
     $.each(formData, function (i, field) {
-        if (field.name && FormItemsChanged.includes(field.name)) {
-
-            // Extract base field name without '-min' or '-max'
-            let baseFieldName = field.name.replace(/-min$/, '').replace(/-max$/, '');
-            // Mark this base field as changed
-            if (!changedFields.includes(baseFieldName)) {
-                changedFields.push(baseFieldName);
-            }
+        if (field.name && FormItemsChanged.includes(field.name) && !field.name.includes('price')) {
 
             // Check if field is a multi-select or specific type field
             if (select_type_fields.hasOwnProperty(field.name) || 
@@ -1333,13 +1273,18 @@ function getChangedFields() {
                 }
 
             } else if (field.name.includes('-min') || field.name.includes('-max')) {
-                let field_name = baseFieldName; // Use the base field name
-                if (!fieldMap.hasOwnProperty(field_name)) {
-                    fieldMap[field_name] = {};
-                }
+                let field_name = '';
                 if (field.name.includes('-min')) {
+                    field_name = field.name.replace(/-min$/, '');
+                    if (!fieldMap.hasOwnProperty(field_name)) {
+                        fieldMap[field_name] = {};
+                    }
                     fieldMap[field_name]['min'] = field.value;
                 } else if (field.name.includes('-max')) {
+                    field_name = field.name.replace(/-max$/, '');
+                    if (!fieldMap.hasOwnProperty(field_name)) {
+                        fieldMap[field_name] = {};
+                    }
                     fieldMap[field_name]['max'] = field.value;
                 }
             } else {
@@ -1348,21 +1293,13 @@ function getChangedFields() {
         }
     });
 
-
-    // Add logic to include/exclude null values only for changed fields
+    // Add logic to include/exclude null values
     $('.include-null-checkbox').each(function() {
         var fieldName = $(this).data('field');
-        console.log(fieldName);
-
-        // Use the base field name for comparison
-        let baseFieldName = fieldName.replace(/-min$/, '').replace(/-max$/, '');
-
-        if (changedFields.includes(baseFieldName)) { // Only include null filter if the field value has changed
-            if ($(this).is(':checked')) {
-                fieldMap[baseFieldName + '-include-null'] = true;
-            } else {
-                fieldMap[baseFieldName + '-include-null'] = false;
-            }
+        if ($(this).is(':checked')) {
+            fieldMap[fieldName + '-include-null'] = true;
+        } else {
+            fieldMap[fieldName + '-include-null'] = false;
         }
     });
 
@@ -1371,19 +1308,15 @@ function getChangedFields() {
 }
 
 
-
-
         $("button.property-count").click(function () {
             console.log("property count clicked");
             var dataObject = getChangedFields();
             console.log('Changed dataObject', dataObject);
 
-            // Show spinner overlay and apply blur to the body
-            $('.count-rows').empty().append('<span><b>Fetching count...</b></span>');
-            $('.count-owners').empty();
-            showElementUsingClass('count-display');
-            $('#spinner-overlay').css('display', 'flex'); // Show the spinner
-          
+            // Show the spinner and blur the page
+            // $('#spinner-overlay').css('display', 'flex');
+            // $('body').addClass('blur');
+
 
             $.ajax({
                 url: '/query-count',
@@ -1391,26 +1324,35 @@ function getChangedFields() {
                 data: JSON.stringify(dataObject),
                 contentType: 'application/json',
                 success: function (response) {
-                    $('#spinner-overlay').css('display', 'none'); // Hide spinner on success
-                    $('body').removeClass('blur'); // Remove blur effect
+                    // console.log(response);
 
-                    if (response && typeof response == 'object' && response.hasOwnProperty('message') && response.hasOwnProperty('count') && response.message.toLowerCase() == 'success' && typeof response.count == 'object' && response.count.hasOwnProperty('all_rows') && response.count.hasOwnProperty('distinct_owners')) {
+                    if (response && typeof response == 'object' && response.hasOwnProperty('message') && response.hasOwnProperty('count') && response.message.toString().toLowerCase() == 'success' && typeof response.count == 'object' && response.count.hasOwnProperty('all_rows') && response.count.hasOwnProperty('distinct_owners')) {
+                        console.log(response.count)
                         let count = response.count;
-                        $('.count-rows').empty().append(`<span><b>No. of Properties: </b>${count.all_rows}</span>`);
-                        $('.count-owners').empty().append(`<span><b>No. of Distinct Owners: </b>${count.distinct_owners}</span>`);
+                        console.log('success')
+                        $('.count-rows').empty()
+                        $('.count-rows').append(`<span><b>No. of Properties: </b>${count.all_rows}</span>`)
+                        $('.count-owners').empty()
+                        $('.count-owners').append(`<span><b>No. of Distinct Owners: </b>${count.distinct_owners}</span>`)
+
+                        showElementUsingClass('count-display');
                     } else {
+                        console.error(response);
+                        console.error(response.count.hasOwnProperty('all_rows'));
+                        console.error(response.count.hasOwnProperty('distinct_owners'));
                         hideElementUsingClass('count-display');
                     }
+                    $('#spinner-overlay').css('display', 'none');
+
+
                 },
                 error: function (error) {
                     console.error('Error fetching counts:', error);
-                    $('#spinner-overlay').css('display', 'none'); // Hide spinner on error
-                    $('body').removeClass('blur'); // Remove blur effect
-                    $('.count-rows').empty().append('<span><b>Error fetching count</b></span>');
-                }
-            });
-        });
+                    $('#spinner-overlay').css('display', 'none');
 
+                }
+            })
+        });
 
         $('#fetch-results').click(function () {
             // send ajax request to export_data URL
@@ -1471,20 +1413,6 @@ function getChangedFields() {
 
 
     });
-
-    // Attach click event listener to all 'Deselect All' buttons
-document.querySelectorAll('.deselect-btn').forEach(button => {
-    button.addEventListener('click', function() {
-        const selectId = this.getAttribute('data-select-id');
-        const selectElement = document.getElementById(selectId);
-        
-        // Deselect all options
-        for (let i = 0; i < selectElement.options.length; i++) {
-            selectElement.options[i].selected = false;
-        }
-    });
-});
-
 </script>
 
 {% endblock %}

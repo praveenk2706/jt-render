@@ -1,0 +1,151 @@
+import pandas as pd
+import os
+
+def save_georgia_batches(input_file, output_folder, batch_size=10000):
+    # Load the DataFrame from the input CSV file
+    df = pd.read_csv(input_file,dtype={
+    "APN": str,
+    "Property_State_Name": str,
+    "Property_County_Name": str,
+    "Lot_Acreage": pd.Float64Dtype(),
+    "Lot_Area": pd.Float64Dtype(),
+    "Property_Zip_Code": str,
+    "Property_Zip_Code_STD": str,
+    "Property_Address": str,
+    "Property_Address_Full": str,
+    "Property_City": str,
+    "Property_County_FIPS": str,
+    "Property_Range": str,
+    "Property_Section": str,
+    "Property_Subdivision": str,
+    "Property_Township": str,
+    "Property_Zoning": str,
+    "Property_Latitude": pd.Float64Dtype(),
+    "Property_Longitude": pd.Float64Dtype(),
+    "Significant_Flood_Zones": pd.Float64Dtype(),
+    "Unformatted_APN": str,
+    "Alternate_APN": str,
+    "Wetlands_Total": pd.Float64Dtype(),
+    "Year_Built": pd.Float64Dtype(),
+    "slope_mean": pd.Float64Dtype(),
+    "Owner_ID": str,
+    "Plot_ID": str,
+    "SITE_AAF": str,
+    "SITE_CCD": str,
+    "SITE_ZIP": pd.Int64Dtype(),
+    "OWNER_9B": str,
+    "MAIL_A9D": str,
+    "DATE_TE2": str,
+    "VAL_TRA7": pd.Float64Dtype(),
+    "ACREAGE": pd.Float64Dtype(),
+    "AGGR_A68": pd.Float64Dtype(),
+    "AGGR_GD": str,
+    "AGGR_L57": pd.Int64Dtype(),
+    "LAND_SBC": pd.Float64Dtype(),
+    "UNITS_BB": pd.Float64Dtype(),
+    "YR_BLT": str,
+    "ZONING": str,
+    "USE_COBE": str,
+    "USE_CO2F": str,
+    "STATEFP10": pd.Int64Dtype(),
+    "COUNTYFP10": pd.Int64Dtype(),
+    "GEOID10": pd.Int64Dtype(),
+    "NAME10": str,
+    "NAMELSAD10": str,
+    "totpop10": pd.Int64Dtype(),
+    "WFD": str,
+    "RDC_AAA": str,
+    "MNGWPD": str,
+    "MPO": str,
+    "MSA": str,
+    "F1HR_NA": str,
+    "F8HR_NA": str,
+    "Reg_Comm": str,
+    "Acres": pd.Float64Dtype(),
+    "Sq_Miles": pd.Float64Dtype(),
+    "Label": str,
+    "GlobalID": str,
+    "last_edite": str,
+    "Clay": pd.Float64Dtype(),
+    "Clay_loam": pd.Float64Dtype(),
+    "Coarse_sand": pd.Float64Dtype(),
+    "Coarse_sandy_loam": pd.Float64Dtype(),
+    "Fine_sand": pd.Float64Dtype(),
+    "Fine_sandy_loam": pd.Float64Dtype(),
+    "Loam": pd.Float64Dtype(),
+    "Loamy_coarse_sand": pd.Float64Dtype(),
+    "Loamy_fine_sand": pd.Float64Dtype(),
+    "Loamy_sand": pd.Float64Dtype(),
+    "Sand": pd.Float64Dtype(),
+    "Sandy_clay": pd.Float64Dtype(),
+    "Sandy_clay_loam": pd.Float64Dtype(),
+    "Sandy_loam": pd.Float64Dtype(),
+    "Silt_loam": pd.Float64Dtype(),
+    "Silty_clay": pd.Float64Dtype(),
+    "Silty_clay_loam": pd.Float64Dtype(),
+    "Very_fine_sandy_loam": pd.Float64Dtype(),
+    "A": pd.Float64Dtype(),
+    "AE": pd.Float64Dtype(),
+    "AH": pd.Float64Dtype(),
+    "AREA_NOT_INCLUDED": pd.Float64Dtype(),
+    "D": pd.Float64Dtype(),
+    "VE": pd.Float64Dtype(),
+    "X": pd.Float64Dtype(),
+    "slope_min": pd.Float64Dtype(),
+    "slope_max": pd.Float64Dtype(),
+    "slope_std": pd.Float64Dtype(),
+    "num_buildings": pd.Int64Dtype(),
+    "largest_building": pd.Float64Dtype(),
+    "smallest_building": pd.Float64Dtype(),
+    "total_building_area": pd.Float64Dtype(),
+    "nearest_road_type": str,
+    "distance_to_nearest_road_from_centroid": pd.Float64Dtype(),
+    "road_length": pd.Float64Dtype(),
+    "trees_percentage": pd.Float64Dtype(),
+    "built_percentage": pd.Float64Dtype(),
+    "grass_percentage": pd.Float64Dtype(),
+    "crops_percentage": pd.Float64Dtype(),
+    "shrub_and_scrub_percentage": pd.Float64Dtype(),
+    "bare_percentage": pd.Float64Dtype(),
+    "water_percentage": pd.Float64Dtype(),
+    "flooded_vegetation_percentage": pd.Float64Dtype(),
+    "snow_and_ice_percentage": pd.Float64Dtype(),
+    "Estuarine_and_Marine_Deepwater": pd.Float64Dtype(),
+    "Estuarine_and_Marine_Wetland": pd.Float64Dtype(),
+    "Freshwater_Emergent_Wetland": pd.Float64Dtype(),
+    "Freshwater_Forested_Shrub_Wetland": pd.Float64Dtype(),
+    "Freshwater_Pond": pd.Float64Dtype(),
+    "Lake": pd.Float64Dtype(),
+    "Riverine": pd.Float64Dtype(),
+    "parcel_area": pd.Float64Dtype(),
+    "plot_area_1": pd.Float64Dtype(),
+    "largest_rect_area": pd.Float64Dtype(),
+    "percent_rectangle": pd.Float64Dtype(),
+    "largest_square_area": pd.Float64Dtype(),
+    "percent_square": pd.Float64Dtype(),
+    "largest_rect_area_cleaned": pd.Float64Dtype(),
+    "largest_square_area_cleaned": pd.Float64Dtype(),
+    "Market_Price": pd.Float64Dtype(),
+})
+
+    # Filter for Georgia data
+    georgia_df = df[df["Property_State_Name"].str.lower() == "north carolina"]
+
+    if georgia_df.empty:
+        print("No records found for Georgia.")
+        return
+
+    # Create output folder if it doesn't exist
+    os.makedirs(output_folder, exist_ok=True)
+
+    # Split the DataFrame into batches
+    for i in range(0, georgia_df.shape[0], batch_size):
+        batch = georgia_df.iloc[i:i + batch_size]
+        batch_file_path = os.path.join(output_folder, f"north_carolina_batch_{i // batch_size + 1}.csv")
+        batch.to_csv(batch_file_path, index=False)
+        print(f"Saved batch {i // batch_size + 1} to {batch_file_path}")
+
+if __name__ == "__main__":
+    input_file = '/home/itechnolabs/Desktop/Prop_Existing.csv'  # Change this path as needed
+    output_folder = '/home/itechnolabs/Desktop/North_Carolina_Batches'  # Change this path as needed
+    save_georgia_batches(input_file, output_folder)

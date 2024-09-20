@@ -3,11 +3,9 @@ import os
 import pathlib
 import random
 import sys
-import tempfile
 import threading
 import traceback
 import zipfile
-from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -32,11 +30,11 @@ from global_constants import (
     CLOUD_API_GATEWAY_KEY,
     LOCATION_CACHE_KEY,
     MAX_CONTENT_LENGTH,
-    NEW_REMOTE_DIRECTORY_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE,
     OWNER_TYPE_CACHE_KEY,
     PDF_GENERATOR_URL,
     REMOTE_BUCKET_NAME_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE,
     REMOTE_DIRECTORY_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE,
+    NEW_REMOTE_DIRECTORY_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE,
     TREE_COVERAGE_CACHE_KEY,
     UPLOAD_FOLDER,
     WELLS_CACHE_KEY,
@@ -62,7 +60,9 @@ from services.filterer import (  # noqa: F401
     load_df,
 )
 from services.v2_pricing_helper import PropertyRecordsPreProcessor
+import tempfile
 
+from datetime import datetime
 # print(sys.getrecursionlimit())
 sys.setrecursionlimit(1000000)
 # print(sys.getrecursionlimit())
@@ -91,7 +91,8 @@ def index():
     # print(df.columns)
     # filter_options = generate_filter_options(df)
 
-    # print(filter_options) # type: ignore
+
+    # print(filter_options)
 
     return render_template("index.html")
 
@@ -103,8 +104,8 @@ def index():
 
 #         return jsonify({"message": "success", "data": filter_options})
 
-# except Exception as e:
-# print(f"Exception {e} while getting filter values")
+#     except Exception as e:
+        # print(f"Exception {e} while getting filter values")
 #         traceback.print_exc()
 #         return jsonify({"message": "failed", "error": str(e)})
 
@@ -154,7 +155,7 @@ def get_filter_values():
             raise Exception("Prop filter initialization failed")
 
         location = response["data"]
-        print(location.keys())
+        # print(location.keys())
 
         nearest_road_types = location["nearest_road_type"]
         del location["nearest_road_type"]
@@ -164,7 +165,7 @@ def get_filter_values():
             "nearest_road_types": nearest_road_types,
         }
 
-        print(filter_options, "filter_options----------")
+        # print(filter_options, "filter_options----------")
 
         return jsonify({"message": "success", "data": filter_options})
 
@@ -670,7 +671,7 @@ def view_records():
 
     # Pagination
     # total_rows = results.shape[0]
-    # print(total_rows, "<<total_rows")
+    # print(total_rows,'<<total_rows')
     # num_pages = (total_rows + per_page - 1) // per_page
     # start_idx = (page - 1) * per_page
     # end_idx = min(start_idx + per_page, total_rows)
@@ -751,35 +752,60 @@ def export_records():
             by=["Owner_ID", "Property_State_Name", "Property_County_Name", "APN"]
         )
 
-        # Step 2: Pre-process the DataFrame using the PropertyRecordsPreProcessor
-        processor = PropertyRecordsPreProcessor(dataframe=df)
-        processed_df = processor.pre_process_fetched_results()
+        def calculate_offer_percentage(market_price):
+            if market_price is None or not isinstance(market_price, (int, np.float64, float, np.int64)) or market_price == 0:
+                return 0
+            
+            else:
+                offer_percentage = 0.4
+                if market_price < 50000:
+                    offer_percentage= 0.4
+                elif market_price < 100000:
+                    offer_percentage = 0.5
+                else:
+                    offer_percentage = 0.55
 
-        if (
-            isinstance(processed_df, dict)
-            and "message" in processed_df
-            and processed_df["message"] == "failed"
-        ):
+                def calculate_offer_price(market_price, offer_percentage):
+                    return round(market_price * offer_percentage, 2)
+                
+                return calculate_offer_price(market_price, offer_percentage)
+                
+
+
+            
+
+        df['Offer_Price'] = df['Market_Price'].apply(calculate_offer_percentage)
+
+
+        # # Step 2: Pre-process the DataFrame using the PropertyRecordsPreProcessor
+        # processor = PropertyRecordsPreProcessor(dataframe=df)
+        # processed_df = processor.pre_process_fetched_results()
+
+        # if (
+        #     isinstance(processed_df, dict)
+        #     and "message" in processed_df
+        #     and processed_df["message"] == "failed"
+        # ):
             # print(f"Error: {processed_df['error']}")
-            return jsonify({"error": processed_df["error"]})
+        #     return jsonify({"error": processed_df["error"]})
 
-        # Step 3: Apply market price filter
-        market_price_min = request.args.get("marketPriceMin", type=float, default=None)
-        market_price_max = request.args.get("marketPriceMax", type=float, default=None)
+        # # Step 3: Apply market price filter
+        # market_price_min = request.args.get("marketPriceMin", type=float, default=None)
+        # market_price_max = request.args.get("marketPriceMax", type=float, default=None)
 
-        if market_price_min is not None:
-            processed_df = processed_df[
-                processed_df["Market_Price"] >= market_price_min
-            ]
+        # if market_price_min is not None:
+        #     processed_df = processed_df[
+        #         processed_df["Market_Price"] >= market_price_min
+        #     ]
 
-        if market_price_max is not None:
-            processed_df = processed_df[
-                processed_df["Market_Price"] <= market_price_max
-            ]
+        # if market_price_max is not None:
+        #     processed_df = processed_df[
+        #         processed_df["Market_Price"] <= market_price_max
+        #     ]
 
         # Step 4: Group by 'Owner_ID', 'Property_State_Name', and 'Property_County_Name'
         grouped_df = (
-            processed_df.groupby(
+            df.groupby(
                 ["Owner_ID", "Property_State_Name", "Property_County_Name"]
             )
             .agg(
@@ -922,7 +948,7 @@ def fetch_records():
                     filter_values=value,
                 )
 
-                # if key == "owner-do-not-mail" and value is not None:
+            # if key == "owner-do-not-mail" and value is not None:
                 print(key, "value--------", value)
             #     sub_query = customQueryBuilderInstance.build_query(
             #         field_name=key,
@@ -982,7 +1008,7 @@ def fetch_records():
         if outside_filters_query:
             full_query += f"\nSELECT * FROM A WHERE {outside_filters_query}"
         else:
-            full_query += "\nSELECT * FROM A"
+            full_query += f"\nSELECT * FROM A"
 
         # print("updated query")
         # print(">>\n", full_query, "\n<<")
@@ -1000,19 +1026,19 @@ def fetch_records():
         return jsonify({"message": "Failed to fetch records"}), 500
 
 
-# def call_cloud_function_for_data_processing(query):
-#     # print("sending request")
+def call_cloud_function_for_data_processing(query):
+    # print("sending request")
 
-#     response = requests.post(
-#         Export_Processor_URL,
-#         params={"api_key": CLOUD_API_GATEWAY_KEY},
-#         json={
-#             "query": query,
-#         },
-#     )
+    response = requests.post(
+        Export_Processor_URL,
+        params={"api_key": CLOUD_API_GATEWAY_KEY},
+        json={
+            "query": query,
+        },
+    )
 
-# print(response)
-# print(type(response))
+    # print(response)
+    # print(type(response))
 
 
 def allowed_file(filename):
@@ -1076,7 +1102,8 @@ def upload():
                 t1.start()
 
             else:
-                print("cloud storage upload result failed")
+                pass
+                # print("cloud storage upload result failed")
 
             return redirect(url_for("acknowledgment"))
         else:
@@ -1109,7 +1136,9 @@ def call_to_generate_pdf_cloud_function_v2(file_path):
         response = requests.post(
             PDF_GENERATOR_URL,
             params={"api_key": CLOUD_API_GATEWAY_KEY},
-            json={"file-path": file_path},
+            json={
+                "file-path": file_path
+            },
         )
 
         # print(response)
@@ -1117,7 +1146,6 @@ def call_to_generate_pdf_cloud_function_v2(file_path):
     except Exception as e:
         traceback.print_exc()
         # print(f"Exception {e} while calling generate pdf cloud function")
-
 
 @app.route("/acknowledgment")
 def acknowledgment():
@@ -1223,7 +1251,7 @@ def upload_merged_csv():
             uploadable_file_name=os.path.basename(temp_file_path),
         )
 
-        print(upload_result)
+        # print(upload_result)
 
         os.remove(temp_file_path)
 
@@ -1232,8 +1260,8 @@ def upload_merged_csv():
             cloud_file_path = f"{REMOTE_BUCKET_NAME_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE}/{campaign_directory}/{os.path.basename(temp_file_path)}"
 
             # Start a thread to call the cloud function
-            print("Cloud storage upload result success")
-            print("Creating orphaned thread to make cloud function API call")
+            # print("Cloud storage upload result success")
+            # print("Creating orphaned thread to make cloud function API call")
             t1 = threading.Thread(
                 target=call_to_generate_pdf_cloud_function_v2,
                 args=(cloud_file_path,)
@@ -1248,7 +1276,5 @@ def upload_merged_csv():
         return jsonify({"error": str(e)}), 500
 
 
-
-
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+    app.run(debug=True, port=8081)

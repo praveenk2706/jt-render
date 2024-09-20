@@ -922,5 +922,12 @@
     "type": "BOOLEAN",
     "description": "",
     "fields": []
+  },
+  {
+    "name": "Market_Price",
+    "mode": "NULLABLE",
+    "type": "FLOAT",
+    "description": "",
+    "fields": []
   }
 ]
