@@ -1129,8 +1129,9 @@ def test_dropdown_ui():
     return render_template("dummy.html")
 
 
-uploaded_df = None  # Variable to store the uploaded DataFrame
 
+uploaded_df = None  # Variable to store the uploaded DataFrame
+merged_df = None  # Variable to store the full merged DataFrame
 
 @app.route("/upload_csv", methods=["POST"])
 def upload_csv():
@@ -1147,7 +1148,7 @@ def upload_csv():
 
 @app.route("/merge_columns", methods=["POST"])
 def merge_columns():
-    global uploaded_df
+    global uploaded_df, merged_df
     try:
         data = request.json  # Get the merge data from the frontend
 
@@ -1160,7 +1161,7 @@ def merge_columns():
                 if not all(col in df_copy.columns for col in columns_to_merge):
                     return jsonify(
                         {
-                            "error": "One or more columns to merge are missing in the DataFrame"
+                            "error": f"One or more columns to merge are missing in the DataFrame"
                         }
                     ), 400
 
@@ -1169,10 +1170,14 @@ def merge_columns():
                     lambda row: " ".join(row.dropna().astype(str)), axis=1
                 )
 
-                # Drop the merged columns
-                df_copy.drop(columns=columns_to_merge, inplace=True)
+                # Avoid dropping the main column itself, in case it's part of the merge list
+                columns_to_drop = [col for col in columns_to_merge if col != main_column]
+                df_copy.drop(columns=columns_to_drop, inplace=True)
 
-            # Handle NaN values before sending response
+            # Store the full merged DataFrame globally
+            merged_df = df_copy.copy()
+
+            # Handle NaN values before sending response for preview (first 10 rows)
             headers = list(df_copy.columns)
             rows = (
                 df_copy.head(10).fillna("").values.tolist()
@@ -1188,31 +1193,25 @@ def merge_columns():
         return jsonify({"error": str(e)}), 500
 
 
+
 @app.route("/upload_merged_csv", methods=["POST"])
 def upload_merged_csv():
-    global uploaded_df
+    global merged_df
     try:
-        data = request.json
+        if merged_df is None:
+            return jsonify({"error": "No merged data available for upload"}), 400
 
-        if not data:
-            return jsonify({"error": "No data to upload"}), 400
-
-        # Create DataFrame from the received data
-        headers = data["headers"]
-        rows = data["rows"]
-        df = pd.DataFrame(rows, columns=headers)
-
-        # Save to a temporary file
+        # Save full merged DataFrame to a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as temp_file:
             temp_file_path = temp_file.name
-            df.to_csv(temp_file_path, index=False)
+            merged_df.to_csv(temp_file_path, index=False)  # Save the full CSV
 
         # Get current date and format it like "Sep-17-2024"
         current_date = datetime.now().strftime("%b-%d-%Y")
         # Update the directory name to "Campaign-Sep-17-2024"
         campaign_directory = f"Campaign-{current_date}"
 
-        # Upload the file to cloud storage
+        # Upload the full CSV file to cloud storage
         file_path_absolute = pathlib.Path(temp_file_path).resolve()
         file_path_absolute_string = str(file_path_absolute)
 
@@ -1224,7 +1223,7 @@ def upload_merged_csv():
             uploadable_file_name=os.path.basename(temp_file_path),
         )
 
-        # print(upload_result)
+        print(upload_result)
 
         os.remove(temp_file_path)
 
@@ -1233,23 +1232,22 @@ def upload_merged_csv():
             cloud_file_path = f"{REMOTE_BUCKET_NAME_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE}/{campaign_directory}/{os.path.basename(temp_file_path)}"
 
             # Start a thread to call the cloud function
-            # print("Cloud storage upload result success")
-            # print("Creating orphaned thread to make cloud function API call")
+            print("Cloud storage upload result success")
+            print("Creating orphaned thread to make cloud function API call")
             t1 = threading.Thread(
-                target=call_to_generate_pdf_cloud_function_v2, args=(cloud_file_path,)
+                target=call_to_generate_pdf_cloud_function_v2,
+                args=(cloud_file_path,)
             )
             t1.start()
 
-            return jsonify(
-                {
-                    "message": f"File successfully uploaded to '{campaign_directory}' in cloud storage, and PDF generation is in progress. You will be notified via email once it's completed."
-                }
-            ), 200
+            return jsonify({"message": f"File successfully uploaded to '{campaign_directory}' in cloud storage, and PDF generation is in progress. You will be notified via email once it's completed."}), 200
         else:
             return jsonify({"error": "Failed to upload file to cloud storage"}), 500
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
 
 
 if __name__ == "__main__":
