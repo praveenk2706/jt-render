@@ -3,11 +3,9 @@ import os
 import pathlib
 import random
 import sys
-import tempfile
 import threading
 import traceback
 import zipfile
-from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -61,11 +59,14 @@ from services.filterer import (  # noqa: F401
     generate_filter_options,
     load_df,
 )
-from services.v2_pricing_helper import PropertyRecordsPreProcessor
+# from services.v2_pricing_helper import PropertyRecordsPreProcessor
+import tempfile
 
-# print(sys.getrecursionlimit())
-sys.setrecursionlimit(1000000)
-# print(sys.getrecursionlimit())
+from datetime import datetime
+
+print(sys.getrecursionlimit())
+sys.setrecursionlimit(10000)
+print(sys.getrecursionlimit())
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "T3mP$7r1nGf0RFl@sk@ppS3cr3tK3y"
@@ -103,8 +104,8 @@ def index():
 
 #         return jsonify({"message": "success", "data": filter_options})
 
-# except Exception as e:
-# print(f"Exception {e} while getting filter values")
+#     except Exception as e:
+#         print(f"Exception {e} while getting filter values")
 #         traceback.print_exc()
 #         return jsonify({"message": "failed", "error": str(e)})
 
@@ -154,7 +155,7 @@ def get_filter_values():
             raise Exception("Prop filter initialization failed")
 
         location = response["data"]
-        # print(location.keys())
+        print(location.keys())
 
         nearest_road_types = location["nearest_road_type"]
         del location["nearest_road_type"]
@@ -164,7 +165,7 @@ def get_filter_values():
             "nearest_road_types": nearest_road_types,
         }
 
-        # print(filter_options, "filter_options----------")
+        print(filter_options, "filter_options----------")
 
         return jsonify({"message": "success", "data": filter_options})
 
@@ -784,18 +785,22 @@ def export_records():
         #     and "message" in processed_df
         #     and processed_df["message"] == "failed"
         # ):
-        # print(f"Error: {processed_df['error']}")
+        #     print(f"Error: {processed_df['error']}")
         #     return jsonify({"error": processed_df["error"]})
 
-        # Step 3: Apply market price filter
-        market_price_min = request.args.get("marketPriceMin", type=float, default=None)
-        market_price_max = request.args.get("marketPriceMax", type=float, default=None)
+        # # Step 3: Apply market price filter
+        # market_price_min = request.args.get("marketPriceMin", type=float, default=None)
+        # market_price_max = request.args.get("marketPriceMax", type=float, default=None)
 
-        if market_price_min is not None:
-            df = df[df["Market_Price"] >= market_price_min]
+        # if market_price_min is not None:
+        #     processed_df = processed_df[
+        #         processed_df["Market_Price"] >= market_price_min
+        #     ]
 
-        if market_price_max is not None:
-            df = df[df["Market_Price"] <= market_price_max]
+        # if market_price_max is not None:
+        #     processed_df = processed_df[
+        #         processed_df["Market_Price"] <= market_price_max
+        #     ]
 
         # Step 4: Group by 'Owner_ID', 'Property_State_Name', and 'Property_County_Name'
         grouped_df = (
@@ -1000,7 +1005,7 @@ def fetch_records():
         if outside_filters_query:
             full_query += f"\nSELECT * FROM A WHERE {outside_filters_query}"
         else:
-            full_query += f"\nSELECT * FROM A"
+            full_query += "\nSELECT * FROM A"
 
         print("updated query")
         print(">>\n", full_query, "\n<<")
@@ -1019,7 +1024,7 @@ def fetch_records():
 
 
 def call_cloud_function_for_data_processing(query):
-    # print("sending request")
+    print("sending request")
 
     response = requests.post(
         Export_Processor_URL,
@@ -1029,8 +1034,8 @@ def call_cloud_function_for_data_processing(query):
         },
     )
 
-    # print(response)
-    # print(type(response))
+    print(response)
+    print(type(response))
 
 
 def allowed_file(filename):
@@ -1094,8 +1099,7 @@ def upload():
                 t1.start()
 
             else:
-                pass
-                # print("cloud storage upload result failed")
+                print("cloud storage upload result failed")
 
             return redirect(url_for("acknowledgment"))
         else:
@@ -1201,7 +1205,7 @@ def merge_columns():
             # Handle NaN values before sending response for preview (first 10 rows)
             headers = list(df_copy.columns)
             rows = (
-                df_copy.head(10).fillna("").values.tolist()
+                df_copy.head(1).fillna("").values.tolist()
             )  # Replace NaN with empty string
 
             # Ensure that rows are in a format compatible with JSON
@@ -1234,12 +1238,12 @@ def upload_merged_csv():
         file_path_absolute = pathlib.Path(temp_file_path).resolve()
         file_path_absolute_string = str(file_path_absolute)
 
-        print(REMOTE_BUCKET_NAME_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE)
-        print(campaign_directory)
+        # print(REMOTE_BUCKET_NAME_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE)
+        # print(campaign_directory)
 
-        print("filepath absolute", file_path_absolute_string)
-        print(temp_file_path)
-        print(os.path.basename(temp_file_path))
+        # print("filepath absolute", file_path_absolute_string)
+        # print(temp_file_path)
+        # print(os.path.basename(temp_file_path))
 
         upload_result = CLOUD_STORAGE_CLIENT.upload_file_to_cloud_bucket(
             bucket_name=REMOTE_BUCKET_NAME_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE,
@@ -1249,7 +1253,7 @@ def upload_merged_csv():
             uploadable_file_name=os.path.basename(temp_file_path),
         )
 
-        # print(upload_result)
+        print(upload_result)
 
         os.remove(temp_file_path)
 
@@ -1258,8 +1262,8 @@ def upload_merged_csv():
             cloud_file_path = f"{REMOTE_BUCKET_NAME_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE}/{campaign_directory}/{os.path.basename(temp_file_path)}"
 
             # Start a thread to call the cloud function
-            # print("Cloud storage upload result success")
-            # print("Creating orphaned thread to make cloud function API call")
+            print("Cloud storage upload result success")
+            print("Creating orphaned thread to make cloud function API call")
             t1 = threading.Thread(
                 target=call_to_generate_pdf_cloud_function_v2, args=(cloud_file_path,)
             )

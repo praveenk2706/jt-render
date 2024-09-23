@@ -9,13 +9,13 @@ resources:
   memory_gb: 8      # Adjust memory as needed
   disk_size_gb: 10  # Adjust disk size as needed
 
-# automatic_scaling:
-#   min_num_instances: 1
-#   max_num_instances: 5
+automatic_scaling:
+  min_num_instances: 1
+  max_num_instances: 5
 
 runtime_config:
   operating_system: "ubuntu22"
-  python_version: "3.10"  # or whichever version you're targeting
+  python_version: "3.12"  # or whichever version you're targeting
 
 handlers:
 - url: /static

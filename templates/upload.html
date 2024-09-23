@@ -139,6 +139,10 @@ document.getElementById("uploadForm").addEventListener("submit", function(event)
 });
 
 document.getElementById("mergeButton").addEventListener("click", function() {
+    const mergeButton = document.getElementById("mergeButton");
+    mergeButton.disabled = true; // Disable the button
+    mergeButton.innerHTML = 'Merging... <span class="spinner-border spinner-border-sm"></span>'; // Show loading spinner
+
     const mergeData = {};
 
     const selects = document.querySelectorAll('select');
@@ -194,6 +198,10 @@ document.getElementById("mergeButton").addEventListener("click", function() {
     })
     .catch(error => {
         console.error('There was a problem with the fetch operation:', error);
+    })
+    .finally(() => {
+        mergeButton.disabled = false; // Re-enable the button
+        mergeButton.innerHTML = 'Merge Columns'; // Reset button text
     });
 });
 

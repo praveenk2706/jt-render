@@ -109,8 +109,6 @@ field_schema_mapping = {
     "owner-name-type": "Owner_Name_Type",
     "owner-do-not-mail": "Do_Not_Mail",
     "market_price": "Market_Price"
-    "owner-do-not-mail": "Do_Not_Mail",
-    "market_price": "Market_Price"
 }
 
 COUNT_ALL_QUERY_CACHED_KEY = "count-all-rows"
