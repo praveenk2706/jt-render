@@ -15,7 +15,7 @@ resources:
 
 runtime_config:
   operating_system: "ubuntu22"
-  python_version: "3.12"  # or whichever version you're targeting
+  python_version: "3.10"  # or whichever version you're targeting
 
 handlers:
 - url: /static
@@ -28,3 +28,5 @@ env_variables:
   CLOUD_STORAGE_BUCKET: olmstead-property-letters
   FLASK_SERVER: app
   FLASK_DEBUG: 1  # Ensure this is set to 0 for production
+
+service_account: fresh-service-account@mail-engine-411414.iam.gserviceaccount.com

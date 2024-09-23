@@ -109,6 +109,8 @@ field_schema_mapping = {
     "owner-name-type": "Owner_Name_Type",
     "owner-do-not-mail": "Do_Not_Mail",
     "market_price": "Market_Price"
+    "owner-do-not-mail": "Do_Not_Mail",
+    "market_price": "Market_Price"
 }
 
 COUNT_ALL_QUERY_CACHED_KEY = "count-all-rows"
@@ -141,7 +143,9 @@ Export_Processor_URL = "https://us-central1-mail-engine-411414.cloudfunctions.ne
 # PDF_GENERATOR_URL = "http://localhost:8080"
 
 # prod
-PDF_GENERATOR_URL = f"{CLOUD_API_GATEWAY_URL_BASE}/generate-pdf"
+# PDF_GENERATOR_URL = f"{CLOUD_API_GATEWAY_URL_BASE}/generate-pdf"
+PDF_GENERATOR_URL = "https://us-central1-mail-engine-411414.cloudfunctions.net/generate-v2"
+
 
 
 CLOUD_STORAGE_CLIENT = CloudStorageHelper(store_location="Received_From_Mail_House")

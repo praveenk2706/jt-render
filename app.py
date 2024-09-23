@@ -3,9 +3,11 @@ import os
 import pathlib
 import random
 import sys
+import tempfile
 import threading
 import traceback
 import zipfile
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -34,7 +36,7 @@ from global_constants import (
     PDF_GENERATOR_URL,
     REMOTE_BUCKET_NAME_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE,
     REMOTE_DIRECTORY_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE,
-    NEW_REMOTE_DIRECTORY_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE,
+    # NEW_REMOTE_DIRECTORY_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE,
     TREE_COVERAGE_CACHE_KEY,
     UPLOAD_FOLDER,
     WELLS_CACHE_KEY,
@@ -60,9 +62,7 @@ from services.filterer import (  # noqa: F401
     load_df,
 )
 from services.v2_pricing_helper import PropertyRecordsPreProcessor
-import tempfile
 
-from datetime import datetime
 # print(sys.getrecursionlimit())
 sys.setrecursionlimit(1000000)
 # print(sys.getrecursionlimit())
@@ -91,7 +91,6 @@ def index():
     # print(df.columns)
     # filter_options = generate_filter_options(df)
 
-
     # print(filter_options)
 
     return render_template("index.html")
@@ -104,8 +103,8 @@ def index():
 
 #         return jsonify({"message": "success", "data": filter_options})
 
-#     except Exception as e:
-        # print(f"Exception {e} while getting filter values")
+# except Exception as e:
+# print(f"Exception {e} while getting filter values")
 #         traceback.print_exc()
 #         return jsonify({"message": "failed", "error": str(e)})
 
@@ -170,7 +169,7 @@ def get_filter_values():
         return jsonify({"message": "success", "data": filter_options})
 
     except Exception as e:
-        # print(f"Exception {e} while getting filter values")
+        print(f"Exception {e} while getting filter values")
         traceback.print_exc()
         return jsonify({"message": "failed", "error": str(e)})
 
@@ -185,7 +184,7 @@ def number_input_validator(value, field_name):
         new_val = float(value) if value else None
         return new_val
     except Exception as e:
-        # print(f"exception {e} in validating {value} for field {field_name}")
+        print(f"exception {e} in validating {value} for field {field_name}")
         return None
 
 
@@ -265,7 +264,7 @@ def query_counts_after_filter():
                     filter_values=value,
                 )
 
-                # print(sub_query)
+                print(sub_query)
             if key in field_schema_mapping:
                 mapped_field_name = field_schema_mapping[key]
 
@@ -322,7 +321,7 @@ def query_counts_after_filter():
                 f"\nSELECT COUNT(*) AS CNT FROM A WHERE {outside_filters_query}"
             )
         else:
-            full_query += f"\nSELECT COUNT(*) AS CNT FROM A"
+            full_query += "\nSELECT COUNT(*) AS CNT FROM A"
 
         # For distinct owner count query
         updated_query_owner = full_query.replace(
@@ -330,8 +329,8 @@ def query_counts_after_filter():
         )
 
         # Log the final queries
-        # print(f"Full query: {full_query}")
-        # print(f"Distinct owner query: {updated_query_owner}")
+        print(f"Full query: {full_query}")
+        print(f"Distinct owner query: {updated_query_owner}")
 
         # Execute the queries
         countdf1, countdf2 = (
@@ -350,8 +349,8 @@ def query_counts_after_filter():
         ), 200
 
     except Exception as e:
-        # print("cannot fetch records")
-        # print(e)
+        print("cannot fetch records")
+        print(e)
         traceback.print_exc()
         return render_template(
             "error/page-500.html",
@@ -416,11 +415,11 @@ def get_location_values():
                         422,
                     )
         else:
-            # print("location_fields_cached is")
-            # print(type(location_fields_cached))
+            print("location_fields_cached is")
+            print(type(location_fields_cached))
             return jsonify({"message": "success", "data": location_fields_cached})
     except Exception as e:
-        # print(e)
+        print(e)
         traceback.print_exc()
         return jsonify({"message": "Internal server error", "error": str(e)}), 500
 
@@ -445,8 +444,8 @@ def get_wells():
             return jsonify(wells_choices)
         # pass
     except Exception as e:
-        # print("Exception while fetching wells")
-        # print(e)
+        print("Exception while fetching wells")
+        print(e)
         traceback.print_exc()
         return jsonify([])
 
@@ -470,8 +469,8 @@ def get_tree_coverage():
 
             return jsonify(tree_coverage_choices)
     except Exception as e:
-        # print("Exception while fetching tree coverage")
-        # print(e)
+        print("Exception while fetching tree coverage")
+        print(e)
         traceback.print_exc()
         return jsonify([])
 
@@ -485,8 +484,8 @@ def get_owner_type():
         if cached_owner_types is None:
             owner_types = bigQueryFetchInstance.get_owner_type()
 
-            # print("owner types")
-            # print(owner_types)
+            print("owner types")
+            print(owner_types)
 
             if owner_types is None:
                 return jsonify([])
@@ -505,8 +504,8 @@ def get_owner_type():
 
             return jsonify(owner_type_choices)
     except Exception as e:
-        # print("Exception while fetching owner types")
-        # print(e)
+        print("Exception while fetching owner types")
+        print(e)
         traceback.print_exc()
         return jsonify([])
 
@@ -520,7 +519,7 @@ def get_access_types():
         if cached_access_type is None:
             access_types = bigQueryFetchInstance.get_access_type()
 
-            # print(f"access_types {access_types}")
+            print(f"access_types {access_types}")
 
             if access_types is None:
                 return jsonify([])
@@ -532,7 +531,7 @@ def get_access_types():
             ]
             return jsonify(access_type_choices)
         else:
-            # print(f"Cached access types {cached_access_type}")
+            print(f"Cached access types {cached_access_type}")
             access_type_choices = [
                 (str(access_type).title(), str(access_type).lower())
                 for access_type in cached_access_type
@@ -541,19 +540,19 @@ def get_access_types():
             return jsonify(access_type_choices)
 
     except Exception as e:
-        # print("Exception while fetching access types")
-        # print(e)
+        print("Exception while fetching access types")
+        print(e)
         traceback.print_exc()
         return jsonify([])
 
 
 @app.route("/get-range", methods=["POST"])
 def get_range():
-    # print(("get range called"))
-    # print(request.json)
+    print(("get range called"))
+    print(request.json)
     field_name = request.json.get("field", "")
 
-    # print(field_name)
+    print(field_name)
 
     if (
         field_name is None
@@ -613,7 +612,7 @@ def fetch_bigquery_records():
             return []
 
     except Exception as e:
-        # print(f"Exception {e} while fetching bigquery records")
+        print(f"Exception {e} while fetching bigquery records")
         traceback.print_exc()
         return None
 
@@ -641,7 +640,7 @@ def display_data():
         return render_template("result.html", page_data=page_data, num_pages=num_pages)
 
     except Exception as e:
-        # print(e)
+        print(e)
         traceback.print_exc()
         return jsonify({"message": "failed", "error": e}), 500
 
@@ -663,7 +662,7 @@ def view_records():
     query += limit_offset
 
     # query = fetch_v13_prefix + "\n" + query
-    # print(query)
+    print(query)
 
     results = bigQueryFetchInstance.runQuery(queryString=query)
 
@@ -740,7 +739,7 @@ def export_records():
         with open("/tmp/query.txt", "r") as fp:
             query = fp.read()
 
-        # print("starting download")
+        print("starting download")
         flash("File will be downloading, Please do not close this tab")
 
         # Fetch results (Replace with actual data fetch logic)
@@ -753,13 +752,17 @@ def export_records():
         )
 
         def calculate_offer_percentage(market_price):
-            if market_price is None or not isinstance(market_price, (int, np.float64, float, np.int64)) or market_price == 0:
+            if (
+                market_price is None
+                or not isinstance(market_price, (int, np.float64, float, np.int64))
+                or market_price == 0
+            ):
                 return 0
-            
+
             else:
                 offer_percentage = 0.4
                 if market_price < 50000:
-                    offer_percentage= 0.4
+                    offer_percentage = 0.4
                 elif market_price < 100000:
                     offer_percentage = 0.5
                 else:
@@ -767,15 +770,10 @@ def export_records():
 
                 def calculate_offer_price(market_price, offer_percentage):
                     return round(market_price * offer_percentage, 2)
-                
+
                 return calculate_offer_price(market_price, offer_percentage)
-                
 
-
-            
-
-        df['Offer_Price'] = df['Market_Price'].apply(calculate_offer_percentage)
-
+        df["Offer_Price"] = df["Market_Price"].apply(calculate_offer_percentage)
 
         # # Step 2: Pre-process the DataFrame using the PropertyRecordsPreProcessor
         # processor = PropertyRecordsPreProcessor(dataframe=df)
@@ -786,28 +784,22 @@ def export_records():
         #     and "message" in processed_df
         #     and processed_df["message"] == "failed"
         # ):
-            # print(f"Error: {processed_df['error']}")
+        # print(f"Error: {processed_df['error']}")
         #     return jsonify({"error": processed_df["error"]})
 
-        # # Step 3: Apply market price filter
-        # market_price_min = request.args.get("marketPriceMin", type=float, default=None)
-        # market_price_max = request.args.get("marketPriceMax", type=float, default=None)
+        # Step 3: Apply market price filter
+        market_price_min = request.args.get("marketPriceMin", type=float, default=None)
+        market_price_max = request.args.get("marketPriceMax", type=float, default=None)
 
-        # if market_price_min is not None:
-        #     processed_df = processed_df[
-        #         processed_df["Market_Price"] >= market_price_min
-        #     ]
+        if market_price_min is not None:
+            df = df[df["Market_Price"] >= market_price_min]
 
-        # if market_price_max is not None:
-        #     processed_df = processed_df[
-        #         processed_df["Market_Price"] <= market_price_max
-        #     ]
+        if market_price_max is not None:
+            df = df[df["Market_Price"] <= market_price_max]
 
         # Step 4: Group by 'Owner_ID', 'Property_State_Name', and 'Property_County_Name'
         grouped_df = (
-            df.groupby(
-                ["Owner_ID", "Property_State_Name", "Property_County_Name"]
-            )
+            df.groupby(["Owner_ID", "Property_State_Name", "Property_County_Name"])
             .agg(
                 {
                     "APN": lambda x: x.tolist(),
@@ -892,7 +884,7 @@ def export_records():
         )
 
     except Exception as e:
-        # print(e)
+        print(e)
         return jsonify({"error": str(e)})
 
 
@@ -949,7 +941,7 @@ def fetch_records():
                 )
 
             # if key == "owner-do-not-mail" and value is not None:
-                print(key, "value--------", value)
+            #     print(key, "value--------", value)
             #     sub_query = customQueryBuilderInstance.build_query(
             #         field_name=key,
             #         filter_values=value,
@@ -1010,8 +1002,8 @@ def fetch_records():
         else:
             full_query += f"\nSELECT * FROM A"
 
-        # print("updated query")
-        # print(">>\n", full_query, "\n<<")
+        print("updated query")
+        print(">>\n", full_query, "\n<<")
 
         # Save the query to a file (optional)
         with open("/tmp/query.txt", "w") as fb:
@@ -1020,8 +1012,8 @@ def fetch_records():
         return redirect("/view-records")
 
     except Exception as e:
-        # print("cannot fetch records")
-        # print(e)
+        print("cannot fetch records")
+        print(e)
         traceback.print_exc()
         return jsonify({"message": "Failed to fetch records"}), 500
 
@@ -1073,10 +1065,10 @@ def upload():
             file_path_absolute = pathlib.Path(
                 f"{app.config['UPLOAD_FOLDER']}/{filename}"
             ).resolve()
-            # print(file_path_absolute)
+            print(file_path_absolute)
 
             file_path_absolute_string = str(file_path_absolute)
-            # print(file_path_absolute_string)
+            print(file_path_absolute_string)
 
             upload_result = CLOUD_STORAGE_CLIENT.upload_file_to_cloud_bucket(
                 bucket_name=REMOTE_BUCKET_NAME_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE,
@@ -1091,8 +1083,8 @@ def upload():
                 and isinstance(upload_result, str)
                 and len(upload_result.strip()) > 0
             ):
-                # print("cloud storage upload result success")
-                # print("create orphaned thread to make cloud function api call")
+                print("cloud storage upload result success")
+                print("create orphaned thread to make cloud function api call")
                 t1 = threading.Thread(
                     target=call_to_generate_pdf_cloud_function,
                     args={
@@ -1124,11 +1116,11 @@ def call_to_generate_pdf_cloud_function(file_name):
             },
         )
 
-        # print(response)
-        # print(type(response))
+        print(response)
+        print(type(response))
     except Exception as e:
         traceback.print_exc()
-        # print(f"Exception {e} while calling generate pdf cloud function")
+        print(f"Exception {e} while calling generate pdf cloud function")
 
 
 def call_to_generate_pdf_cloud_function_v2(file_path):
@@ -1136,16 +1128,15 @@ def call_to_generate_pdf_cloud_function_v2(file_path):
         response = requests.post(
             PDF_GENERATOR_URL,
             params={"api_key": CLOUD_API_GATEWAY_KEY},
-            json={
-                "file-path": file_path
-            },
+            json={"file-path": file_path},
         )
 
-        # print(response)
-        # print(type(response))
+        print(response)
+        print(type(response))
     except Exception as e:
         traceback.print_exc()
-        # print(f"Exception {e} while calling generate pdf cloud function")
+        print(f"Exception {e} while calling generate pdf cloud function")
+
 
 @app.route("/acknowledgment")
 def acknowledgment():
@@ -1157,9 +1148,9 @@ def test_dropdown_ui():
     return render_template("dummy.html")
 
 
-
 uploaded_df = None  # Variable to store the uploaded DataFrame
 merged_df = None  # Variable to store the full merged DataFrame
+
 
 @app.route("/upload_csv", methods=["POST"])
 def upload_csv():
@@ -1189,7 +1180,7 @@ def merge_columns():
                 if not all(col in df_copy.columns for col in columns_to_merge):
                     return jsonify(
                         {
-                            "error": f"One or more columns to merge are missing in the DataFrame"
+                            "error": "One or more columns to merge are missing in the DataFrame"
                         }
                     ), 400
 
@@ -1199,7 +1190,9 @@ def merge_columns():
                 )
 
                 # Avoid dropping the main column itself, in case it's part of the merge list
-                columns_to_drop = [col for col in columns_to_merge if col != main_column]
+                columns_to_drop = [
+                    col for col in columns_to_merge if col != main_column
+                ]
                 df_copy.drop(columns=columns_to_drop, inplace=True)
 
             # Store the full merged DataFrame globally
@@ -1221,7 +1214,6 @@ def merge_columns():
         return jsonify({"error": str(e)}), 500
 
 
-
 @app.route("/upload_merged_csv", methods=["POST"])
 def upload_merged_csv():
     global merged_df
@@ -1233,7 +1225,6 @@ def upload_merged_csv():
         with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as temp_file:
             temp_file_path = temp_file.name
             merged_df.to_csv(temp_file_path, index=False)  # Save the full CSV
-
         # Get current date and format it like "Sep-17-2024"
         current_date = datetime.now().strftime("%b-%d-%Y")
         # Update the directory name to "Campaign-Sep-17-2024"
@@ -1242,6 +1233,13 @@ def upload_merged_csv():
         # Upload the full CSV file to cloud storage
         file_path_absolute = pathlib.Path(temp_file_path).resolve()
         file_path_absolute_string = str(file_path_absolute)
+
+        print(REMOTE_BUCKET_NAME_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE)
+        print(campaign_directory)
+
+        print("filepath absolute", file_path_absolute_string)
+        print(temp_file_path)
+        print(os.path.basename(temp_file_path))
 
         upload_result = CLOUD_STORAGE_CLIENT.upload_file_to_cloud_bucket(
             bucket_name=REMOTE_BUCKET_NAME_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE,
@@ -1263,12 +1261,15 @@ def upload_merged_csv():
             # print("Cloud storage upload result success")
             # print("Creating orphaned thread to make cloud function API call")
             t1 = threading.Thread(
-                target=call_to_generate_pdf_cloud_function_v2,
-                args=(cloud_file_path,)
+                target=call_to_generate_pdf_cloud_function_v2, args=(cloud_file_path,)
             )
             t1.start()
 
-            return jsonify({"message": f"File successfully uploaded to '{campaign_directory}' in cloud storage, and PDF generation is in progress. You will be notified via email once it's completed."}), 200
+            return jsonify(
+                {
+                    "message": f"File successfully uploaded to '{campaign_directory}' in cloud storage, and PDF generation is in progress. You will be notified via email once it's completed."
+                }
+            ), 200
         else:
             return jsonify({"error": "Failed to upload file to cloud storage"}), 500
 
