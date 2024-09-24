@@ -169,7 +169,7 @@ class BigQueryFetcher:
             # SQL query to retrieve distinct values of State, District, and City
             query = (
                 "SELECT DISTINCT Lower(Property_State_Name) AS Property_State_Name, Lower(Property_County_Name) AS Property_County_Name, Lower(Property_City) AS Property_City, Lower(nearest_road_type) AS Nearest_Road_Type "
-                + "FROM `property-database-370200.Dataset_v3.PropertyOwnerDetailsCTE` "
+                + "FROM `property-database-370200.Dataset_v3.PropertyOwnerDetailsCTE_v2` "
                 + "GROUP BY Property_State_Name, Property_County_Name, Property_City, Nearest_Road_Type "
                 + "ORDER BY Property_State_Name, Property_County_Name, Property_City, Nearest_Road_Type"
             )

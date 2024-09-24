@@ -3,9 +3,13 @@ import os
 import pathlib
 import random
 import sys
+
+# from services.v2_pricing_helper import PropertyRecordsPreProcessor
+import tempfile
 import threading
 import traceback
 import zipfile
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -59,10 +63,6 @@ from services.filterer import (  # noqa: F401
     generate_filter_options,
     load_df,
 )
-# from services.v2_pricing_helper import PropertyRecordsPreProcessor
-import tempfile
-
-from datetime import datetime
 
 print(sys.getrecursionlimit())
 sys.setrecursionlimit(10000)
@@ -312,7 +312,7 @@ def query_counts_after_filter():
         # Base query structure
         full_query = f"""
             WITH A AS (
-                SELECT * FROM `property-database-370200.Dataset_v3.PropertyOwnerDetailsCTE`
+                SELECT * FROM `property-database-370200.Dataset_v3.PropertyOwnerDetailsCTE_v2`
                 {"WHERE " + null_checks_query if null_checks_query else ""}
             )
         """
@@ -695,7 +695,7 @@ def split_groups_evenly(df, num_groups):
 
 def assign_control_numbers(df):
     """Assigns unique random control numbers to unique combinations of columns."""
-    min_value = 1
+    min_value = 100000
     max_value = 999999
 
     # Identify unique combinations and their count
@@ -713,7 +713,7 @@ def assign_control_numbers(df):
     control_numbers = random.sample(range(min_value, max_value + 1), num_combinations)
 
     control_numbers = [
-        str(control_number).zfill(7) for control_number in control_numbers
+        str(control_number).zfill(6) for control_number in control_numbers
     ]
 
     # Map unique combinations to control numbers
@@ -997,7 +997,7 @@ def fetch_records():
         # Base query structure
         full_query = f"""
             WITH A AS (
-                SELECT * FROM `property-database-370200.Dataset_v3.PropertyOwnerDetailsCTE`
+                SELECT * FROM `property-database-370200.Dataset_v3.PropertyOwnerDetailsCTE_v2`
                 {"WHERE " + null_checks_query if null_checks_query else ""}
             )
         """

@@ -1,1 +1,0 @@
-SELECT * FROM PropertyOwnersDetailsCTE  WHERE Loam >= 80.0 AND Sandy_clay >= 0.0 AND Sandy_clay_loam <= 10.0 AND Sandy_loam <= 10.0

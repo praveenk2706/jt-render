@@ -59,7 +59,7 @@ field_schema_mapping = {
     "slope_mean": "slope_mean",
     "treeCoverage": "tree_coverage",
     "well": "Well",
-    "wetlands_total": "Wetlands_Total",
+    "wetlands_total": "Wetlands",
     # "zip-code-matching": "Zip_Code_Matching",
     # "Owner_do_not_mail": "Owners_Do_Not_Mail",
     "nearest_road_types": "nearest_road_type",
