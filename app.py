@@ -5,7 +5,7 @@ import random
 import sys
 
 # from services.v2_pricing_helper import PropertyRecordsPreProcessor
-import tempfile
+# import tempfile
 import threading
 import traceback
 import zipfile
@@ -695,8 +695,8 @@ def split_groups_evenly(df, num_groups):
 
 def assign_control_numbers(df):
     """Assigns unique random control numbers to unique combinations of columns."""
-    min_value = 100000
-    max_value = 999999
+    min_value = 10000
+    max_value = 99999
 
     # Identify unique combinations and their count
     unique_combinations = df[
@@ -1154,6 +1154,7 @@ def test_dropdown_ui():
 
 uploaded_df = None  # Variable to store the uploaded DataFrame
 merged_df = None  # Variable to store the full merged DataFrame
+uploaded_file_name = None
 
 
 @app.route("/upload_csv", methods=["POST"])
@@ -1161,8 +1162,11 @@ def upload_csv():
     global uploaded_df
     file = request.files["file"]
 
+    global uploaded_file_name
+    uploaded_file_name = file
+
     if file:
-        uploaded_df = pd.read_csv(file)
+        uploaded_df = pd.read_csv(file, dtype=str)
         columns = list(uploaded_df.columns)
         return jsonify({"columns": columns})
 
@@ -1225,10 +1229,18 @@ def upload_merged_csv():
         if merged_df is None:
             return jsonify({"error": "No merged data available for upload"}), 400
 
-        # Save full merged DataFrame to a temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as temp_file:
-            temp_file_path = temp_file.name
-            merged_df.to_csv(temp_file_path, index=False)  # Save the full CSV
+        # # Save full merged DataFrame to a temporary file
+        # with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as temp_file:
+        #     temp_file_path = temp_file.name
+        #     merged_df.to_csv(temp_file_path, index=False)  # Save the full CSV
+
+        global uploaded_file_name
+        temp_file_name = uploaded_file_name
+
+        temp_file_path = "/tmp" + uploaded_file_name
+
+        merged_df.to_csv(temp_file_path, index=False)
+
         # Get current date and format it like "Sep-17-2024"
         current_date = datetime.now().strftime("%b-%d-%Y")
         # Update the directory name to "Campaign-Sep-17-2024"
@@ -1236,6 +1248,7 @@ def upload_merged_csv():
 
         # Upload the full CSV file to cloud storage
         file_path_absolute = pathlib.Path(temp_file_path).resolve()
+
         file_path_absolute_string = str(file_path_absolute)
 
         # print(REMOTE_BUCKET_NAME_FOR_UPLOAD_CSV_FROM_MAIL_HOUSE)
