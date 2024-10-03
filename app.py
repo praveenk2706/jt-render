@@ -84,6 +84,7 @@ CLOUD_STORAGE_CLIENT = CloudStorageHelper(store_location="Received_From_Mail_Hou
 # df = load_df()
 
 
+
 @app.route("/", methods=["GET"])
 def index():
     # os.system('clear')
@@ -1224,6 +1225,8 @@ def merge_columns():
 
 @app.route("/upload_merged_csv", methods=["POST"])
 def upload_merged_csv():
+    # if debugMode:
+    #     return jsonify({"message": "uploading merged csv"})
     global merged_df
     try:
         if merged_df is None:
@@ -1235,7 +1238,6 @@ def upload_merged_csv():
         #     merged_df.to_csv(temp_file_path, index=False)  # Save the full CSV
 
         global uploaded_file_name
-        temp_file_name = uploaded_file_name
 
         temp_file_path = "/tmp" + uploaded_file_name
 
@@ -1293,6 +1295,131 @@ def upload_merged_csv():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route("/query-db-v2", methods=["GET"])
+def query_records_page_v2():
+    return render_template("fetch_records_v3.html")
+
+
+@app.route("/get-records-v2", methods=["POST"])
+def fetch_records_v2():
+    try:
+        request_body = request.get_json(silent=True)
+        if request_body is None:
+            return jsonify({"message": "No JSON data received"}), 400
+
+        filters = {}
+        null_checks = []
+        outside_filters = []
+
+        # Separate filters and null checks
+        for key, value in request_body.items():
+            filters[key] = value
+
+        # Handle limit and offset for pagination
+        limit = request_body.get("limit", 10)  # Default limit is 10
+        offset = request_body.get("offset", 0)  # Default offset is 0
+
+        # Helper function to handle range filters
+        def range_filter(field_name, field_value):
+            return {
+                "min": number_input_validator(
+                    value=field_value.get("min"), field_name=f"{field_name}-min"
+                ),
+                "max": number_input_validator(
+                    value=field_value.get("max"), field_name=f"{field_name}-max"
+                ),
+            }
+
+        # Construct the subqueries
+        for key, value in filters.items():
+            sub_query = None
+            include_null = False  # Track if we should include NULL condition
+
+            if key == "zip-code-matching" and value is not None:
+                sub_query = customQueryBuilderInstance.build_query(
+                    field_name=key,
+                    filter_values=value,
+                )
+
+            if key in field_schema_mapping:
+                mapped_field_name = field_schema_mapping[key]
+
+                # Check if the field has an include-null flag
+                include_null_key = f"{key}-include-null"
+                include_null = (
+                    include_null_key in request_body and request_body[include_null_key]
+                )
+
+                if isinstance(value, dict) and ("min" in value or "max" in value):
+                    filter_values = range_filter(key, value)
+                    sub_query = customQueryBuilderInstance.build_query(
+                        field_name=mapped_field_name,
+                        filter_values=filter_values,
+                    )
+                elif isinstance(value, list) and value:
+                    sub_query = customQueryBuilderInstance.build_query(
+                        field_name=mapped_field_name,
+                        filter_values=value,
+                    )
+                elif isinstance(value, (int, float)):
+                    sub_query = customQueryBuilderInstance.build_query(
+                        field_name=mapped_field_name,
+                        filter_values=value,
+                    )
+                elif isinstance(value, str) and value.strip():
+                    sub_query = customQueryBuilderInstance.build_query(
+                        field_name=mapped_field_name,
+                        filter_values=value,
+                    )
+
+            # Add to appropriate filter list
+            if sub_query:
+                # If include-null is true, add the sub_query and IS NULL combined inside WITH A
+                if include_null:
+                    null_checks.append(f"({sub_query} OR {mapped_field_name} IS NULL)")
+                else:
+                    outside_filters.append(sub_query)
+
+        # Build the final query with WITH A AS block and outside WHERE clause
+        null_checks_query = " AND ".join(null_checks)
+        outside_filters_query = " AND ".join(outside_filters)
+
+        # Base query structure
+        full_query = f"""
+            WITH A AS (
+                SELECT * FROM `property-database-370200.Dataset_v3.PropertyOwnerDetailsCTE_v2`
+                {"WHERE " + null_checks_query if null_checks_query else ""}
+            )
+        """
+
+        if outside_filters_query:
+            full_query += f"\nSELECT * FROM A WHERE {outside_filters_query}"
+        else:
+            full_query += "\nSELECT * FROM A"
+
+        # Apply pagination
+        full_query += f"\nLIMIT {limit} OFFSET {offset}"
+
+        print("updated query")
+        print(">>\n", full_query, "\n<<")
+
+        # Save the query to a file (optional)
+        with open("/tmp/query.txt", "w") as fb:
+            fb.write(full_query)
+
+        results = bigQueryFetchInstance.runQuery(queryString=full_query)
+        data = results.to_html(classes="table table-striped", index=False)
+
+        return jsonify({"data": data}), 200
+
+    except Exception as e:
+        print("cannot fetch records")
+        print(e)
+        traceback.print_exc()
+        return jsonify({"message": "Failed to fetch records"}), 500
+
+    
 
 if __name__ == "__main__":
     app.run(debug=True, port=8081)

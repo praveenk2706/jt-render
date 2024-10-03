@@ -1,0 +1,1542 @@
+{% extends 'base.html' %} {% block title %}Filter Records{% endblock %} {% block body %}
+
+<style>
+    /* Sidebar styling */
+    #sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 22%;
+        background-color: #2c3e50;
+        z-index: 1000;
+        color: white;
+        overflow-y: auto;
+        /* Enable scrolling */
+    }
+
+    /* Style for the sidebar header */
+    .sidebar-header {
+        background-color: #343a40; /* Dark background */
+        color: #ffffff; /* White text */
+        padding: 15px 20px; /* Padding around the header */
+        text-align: center; /* Center the header text */
+        font-family: "Arial", sans-serif; /* Custom font */
+        font-size: 18px; /* Increase font size */
+        border-bottom: 2px solid #17a2b8; /* Add a bottom border with a teal color */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add subtle shadow */
+        letter-spacing: 1px; /* Space out the letters */
+    }
+
+    /* Style for the h3 inside sidebar header */
+    .sidebar-header h3 {
+        margin: 0; /* Remove default margin */
+        font-weight: bold; /* Bold text */
+    }
+
+    #sidebar ul.components {
+        padding: 20px 0;
+    }
+
+    #sidebar ul li a {
+        padding: 10px;
+        font-size: 1.1em;
+        color: #ecf0f1;
+        display: block;
+        transition: 0.3s;
+    }
+
+    #sidebar ul li a:hover {
+        background: #34495e;
+        color: #fff;
+        text-decoration: none;
+    }
+
+    #sidebar .sidebar-header h3 {
+        color: #ecf0f1;
+    }
+
+    /* Collapsible filters styling */
+    .collapse-header {
+        cursor: pointer;
+        background-color: #34495e;
+        color: white;
+        padding: 10px;
+        margin-bottom: 5px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+
+    .collapse-header:hover {
+        background-color: #2c3e50;
+    }
+
+    .collapse-content {
+        display: none;
+        padding-left: 15px;
+        margin-bottom: 10px;
+    }
+
+    .collapse-content .form-control {
+        margin-bottom: 10px;
+    }
+
+    .collapse-content.open {
+        display: block;
+        /* Show content when .open class is added */
+    }
+
+    .data-body {
+        margin-left: 22%;
+        margin-top: 1.5%;
+        padding: 20px;
+        max-width: 76%;
+        width: 76%;
+        overflow-x: auto;
+        text-align: left;
+        font-size: 12px;
+    }
+
+    /* Main content styling */
+    #content {
+        margin-left: 0;
+        padding: 20px;
+        max-width: 100%;
+        overflow-y: auto;
+    }
+
+    #count {
+        margin-right: 20px;
+
+        max-width: 74%;
+    }
+
+    /* Fixed top bar for buttons */
+    .fixed-top-buttons {
+        position: fixed;
+        top: 0;
+        left: 25%;
+        background-color: #ecf0f1;
+        width: calc(100% - 270px);
+        padding: 10px;
+        z-index: 1001;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #ddd;
+        max-width: 74%;
+    }
+
+    .fixed-top-buttons button {
+        margin-right: 10px;
+    }
+
+    .form-check {
+        width:100%;
+        justify-content: space-between;
+    }
+
+
+    .btn-success {
+        background-color: #27ae60;
+        border-color: #27ae60;
+    }
+
+    .btn-primary {
+        background-color: #2980b9;
+        border-color: #2980b9;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+    }
+
+    select,
+    input {
+        width: 80%;
+        /* Set the width of all select boxes to 80% */
+        max-width: 80%;
+        /* Ensures that it doesn't exceed the container width */
+        box-sizing: border-box;
+        /* Includes padding and border in the element's total width */
+    }
+
+    .collapse-content {
+        display: none;
+    }
+
+    .collapse-content.open {
+        display: block;
+    }
+
+    .collapse-icon {
+        margin-right: 10px;
+    }
+
+    .collapse-header {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+    }
+
+    .collapse-header .open-icon {
+        content: "-";
+        /* Or any icon you want to show when open */
+    }
+
+    .collapse-header .close-icon {
+        content: "+";
+        /* Or any icon you want to show when closed */
+    }
+
+    #pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+        visibility: hidden; /* Hidden by default, shown when data is returned */
+    }
+
+   
+    #pagination span {
+        font-weight: bold;
+        margin: 0 10px;
+        font-size: 18px;
+    }
+</style>
+<div id="spinner-overlay" class="spinner-overlay">
+    <div class="spinner-border text-primary" role="status">
+        <span>Loading...</span>
+        <!-- Removed visually-hidden -->
+    </div>
+</div>
+
+<!-- Fixed top buttons for counting properties and fetching records -->
+<div class="fixed-top-buttons">
+    <div>
+        <button type="button" id="property-count" class="btn btn-primary btn-sm">Count Properties</button>
+        <button type="submit" id="fetch-results" class="btn btn-success btn-sm">Fetch Records</button>
+    </div>
+    <div class="btn-group mr-2" role="group" aria-label="Second group">
+        <button type="button" class="btn btn-primary btn-sm" id="export-data-btn">Export Data</button>
+    </div>
+</div>
+<div class="container-fluid">
+    <div class="row">
+        <form class="fetch-form" id="fetchRecordsForm">
+            <!-- Sidebar (Collapsible) -->
+            <nav id="sidebar">
+                <div class="sidebar-header">
+                    <h3>Filters</h3>
+                </div>
+                <!-- Location Filters -->
+                <div class="collapse-header" data-target="#locationFilters">
+                    <span class="collapse-icon">+</span>
+                    Location Filters
+                </div>
+                <div id="locationFilters" class="collapse-content">
+                    <!-- Property State Name -->
+                    <div class="collapse-header" data-target="#stateFilter">
+                        <span class="collapse-icon">+</span>
+                        Property State Name
+                    </div>
+                    <div id="stateFilter" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-state" data-field="property-states" />
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+                        <button type="button" class="btn btn-link deselect-btn" data-select-id="state">Deselect All</button>
+                        <select id="state" multiple size="5" name="property-states" class="form-control">
+                            <!-- Options will be dynamically populated -->
+                        </select>
+                    </div>
+                    <!-- Property County Name -->
+                    <div class="collapse-header" data-target="#countyFilter">
+                        <span class="collapse-icon">+</span>
+                        Property County Name
+                    </div>
+                    <div id="countyFilter" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-county" data-field="property-counties" />
+                            <label class="form-check-label" for="include-null-county">Include Null</label>
+                        </div>
+                        <button type="button" class="btn btn-link deselect-btn" data-select-id="county">Deselect All</button>
+                        <select id="county" multiple size="5" name="property-counties" class="form-control">
+                            <!-- Options will be dynamically populated -->
+                        </select>
+                    </div>
+                    <!-- Property City Name -->
+                    <div class="collapse-header" data-target="#cityFilter">
+                        <span class="collapse-icon">+</span>
+                        Property City Name
+                    </div>
+                    <div id="cityFilter" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-city" data-field="property-cities" />
+                            <label class="form-check-label" for="include-null-city">Include Null</label>
+                        </div>
+                        <button type="button" class="btn btn-link deselect-btn" data-select-id="city">Deselect All</button>
+                        <select id="city" multiple size="5" name="property-cities" class="form-control">
+                            <!-- Options will be dynamically populated -->
+                        </select>
+                    </div>
+                </div>
+                <!-- Owner Filters -->
+                <div class="collapse-header" data-target="#ownerFilters">
+                    <span class="collapse-icon">+</span>
+                    Owner Filters
+                </div>
+                <div id="ownerFilters" class="collapse-content">
+                    <!-- Owner Name Type -->
+                    <div class="collapse-header" data-target="#ownerNameTypeFilter">
+                        <span class="collapse-icon">+</span>
+                        Owner Name Type
+                    </div>
+                    <div id="ownerNameTypeFilter" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-owner-name-type" data-field="owner-name-type" />
+                            <label class="form-check-label" for="include-null-owner-name-type">Include Null</label>
+                        </div>
+                        <button type="button" class="btn btn-link deselect-btn" data-select-id="owner-name-type">Deselect All</button>
+                        <select name="owner-name-type" id="owner-name-type" class="form-control" multiple size="5">
+                            <option value="all">All</option>
+                        </select>
+                    </div>
+                    <div class="collapse-header" data-target="#ownerDoNotMail">
+                        <span class="collapse-icon">+</span>
+                        Owner Do not mail
+                    </div>
+                    <div id="ownerDoNotMail" class="collapse-content">
+                        <button type="button" class="btn btn-link deselect-btn" data-select-id="owner-do-not-mail">Deselect All</button>
+                        <select name="owner-do-not-mail" id="owner-do-not-mail" size="5" class="form-control">
+                            <option value="all">All</option>
+                            <option value="True">True</option>
+                            <option value="False">False</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Market Filters -->
+                <div class="collapse-header" data-target="#marketFilters">
+                    <span class="collapse-icon">+</span>
+                    Market & Other Filters
+                </div>
+                <div id="marketFilters" class="collapse-content">
+                    <!-- Market Price -->
+                    <div class="collapse-header" data-target="#marketPriceFilter">
+                        <span class="collapse-icon">+</span>
+                        Market Price
+                    </div>
+                    <div id="marketPriceFilter" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-market_price" data-field="market_price" />
+                            <label class="form-check-label" for="include-null-market_price">Include Null</label>
+                        </div>
+                        <input type="number" name="market_price-min" id="market_price-min" class="form-control" placeholder="Min" />
+                        <input type="number" name="market_price-max" id="market_price-max" class="form-control" placeholder="Max" style="margin-top: 8px;" />
+                    </div>
+                    <!-- Lot Acreage -->
+                    <div class="collapse-header" data-target="#lotAcreageFilter">
+                        <span class="collapse-icon">+</span>
+                        Lot Acreage
+                    </div>
+                    <div id="lotAcreageFilter" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-lot_acreage" data-field="lot_acreage" />
+                            <label class="form-check-label" for="include-null-lot_acreage">Include Null</label>
+                        </div>
+                        <input type="number" name="lot_acreage-min" id="lot_acreage-min" class="form-control" placeholder="Min" />
+                        <input type="number" name="lot_acreage-max" id="lot_acreage-max" class="form-control" placeholder="Max" style="margin-top: 8px;" />
+                    </div>
+
+                    <!-- Significant_Flood_Zones -->
+                    <div class="collapse-header" data-target="#significantfloodZoneFilter">
+                        <span class="collapse-icon">+</span>
+                        Significant_Flood_Zones
+                    </div>
+                    <div id="significantfloodZoneFilter" class="collapse-content">
+
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-significant_flood_zones" data-field="significant_flood_zones">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+
+                        <input type="number" name="significant_flood_zones-min" id="significant_flood_zones-min"
+                            class="form-control" placeholder="Min" style="width: 100%;">
+                        <input type="number" name="significant_flood_zones-max" id="significant_flood_zones-max"
+                            class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+
+
+                    <!-- Slope Mean -->
+                    <div class="collapse-header" data-target="#slopeMeanFilter">
+                        <span class="collapse-icon">+</span>
+                        Slope Mean
+                    </div>
+                    <div id="slopeMeanFilter" class="collapse-content">
+
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-slope_mean" data-field="slope_mean">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+
+                        <input type="number" name="slope_mean-min" id="slope_mean-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="slope_mean-max" id="slope_mean-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+
+
+
+                    <!-- Wetlands Total -->
+                    <div class="collapse-header" data-target="#wetlandsTotalFilter">
+                        <span class="collapse-icon">+</span>
+                        Wetlands Total
+                    </div>
+                    <div id="wetlandsTotalFilter" class="collapse-content">
+
+                         <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-wetlands_total" data-field="wetlands_total">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+                        <input type="number" name="wetlands_total-min" id="wetlands_total-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="wetlands_total-max" id="Wetlands_Total-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+
+
+                    <div class="collapse-header" data-target="#largestBuildingFilter">
+                    <span class="collapse-icon">+</span>
+                    Largest_building
+                    </div>
+                    <div id="largestBuildingFilter" class="collapse-content">
+
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-largest_building" data-field="largest_building">
+                            <label class="form-check-label" for="include-null-state">Include Null</label>
+                        </div>
+                        <input type="number" name="largest_building-min" id="largest_building-min" class="form-control"
+                            placeholder="Min" style="width: 100%;">
+                        <input type="number" name="largest_building-max" id="largest_building-max" class="form-control"
+                            placeholder="Max" style="width: 100%; margin-top: 8px;">
+
+                    </div>
+
+                    <div class="collapse-header" data-target="#zipCodeMatchingFilter">
+                        <span class="collapse-icon">+</span>
+                        Zip Code Matching
+                        </div>
+                        <div id="zipCodeMatchingFilter" class="collapse-content">
+    
+                            <button type="button" class="btn btn-link deselect-btn" data-select-id="zip-code-matching">Deselect All</button>
+                            <select name="zip-code-matching" id="zip-code-matching" size="5" class="form-control">
+                                <option value="all">All</option>
+                                <option value="True">True</option>
+                                <option value="False">False</option>
+                            </select>
+                        </div>
+                
+                
+                </div>
+
+
+                 <!-- Soil Filters -->
+                 <div class="collapse-header" data-target="#soilFilters">
+                    <span class="collapse-icon">+</span>
+                    Soil Filters
+                </div>
+                <div id="soilFilters" class="collapse-content">
+                   <!-- Clay -->
+                   <div class="collapse-header" data-target="#clay"><span class="collapse-icon">+</span>Clay</div>
+                   <div id="clay" class="collapse-content">
+                       <div class="form-check">
+                           <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-clay" data-field="clay" />
+                           <label class="form-check-label" for="include-null-clay">Include Null</label>
+                       </div>
+                       <input type="number" name="clay-min" id="clay-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                       <input type="number" name="clay-max" id="clay-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                   </div>
+                   <!-- Clay_loam -->
+                   <div class="collapse-header" data-target="#clay_loam"><span class="collapse-icon">+</span>Clay_loam</div>
+                   <div id="clay_loam" class="collapse-content">
+                       <div class="form-check">
+                           <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-clay_loam" data-field="clay_loam" />
+                           <label class="form-check-label" for="include-null-clay_loam">Include Null</label>
+                       </div>
+                       <input type="number" name="clay_loam-min" id="clay_loam-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                       <input type="number" name="clay_loam-max" id="clay_loam-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                   </div>
+                   <!-- Coarse_sand -->
+                   <div class="collapse-header" data-target="#coarse_sand"><span class="collapse-icon">+</span>Coarse_sand</div>
+                   <div id="coarse_sand" class="collapse-content">
+                       <div class="form-check">
+                           <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-coarse_sand" data-field="coarse_sand" />
+                           <label class="form-check-label" for="include-null-coarse_sand">Include Null</label>
+                       </div>
+                       <input type="number" name="coarse_sand-min" id="coarse_sand-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                       <input type="number" name="coarse_sand-max" id="coarse_sand-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                   </div>
+                   <!-- Coarse_sandy_loam -->
+                   <div class="collapse-header" data-target="#coarse_sandy_loam"><span class="collapse-icon">+</span>Coarse_sandy_loam</div>
+                   <div id="coarse_sandy_loam" class="collapse-content">
+                       <div class="form-check">
+                           <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-coarse_sandy_loam" data-field="coarse_sandy_loam" />
+                           <label class="form-check-label" for="include-null-coarse_sandy_loam">Include Null</label>
+                       </div>
+                       <input type="number" name="coarse_sandy_loam-min" id="coarse_sandy_loam-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                       <input type="number" name="coarse_sandy_loam-max" id="coarse_sandy_loam-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                   </div>
+                   <!-- Fine_sand -->
+                   <div class="collapse-header" data-target="#fine_sand"><span class="collapse-icon">+</span>Fine_sand</div>
+                   <div id="fine_sand" class="collapse-content">
+                       <div class="form-check">
+                           <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-fine_sand" data-field="fine_sand" />
+                           <label class="form-check-label" for="include-null-fine_sand">Include Null</label>
+                       </div>
+                       <input type="number" name="fine_sand-min" id="fine_sand-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                       <input type="number" name="fine_sand-max" id="fine_sand-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                   </div>
+                   <!-- Fine_sandy_loam -->
+                   <div class="collapse-header" data-target="#fine_sandy_loam"><span class="collapse-icon">+</span>Fine_sandy_loam</div>
+                   <div id="fine_sandy_loam" class="collapse-content">
+                       <div class="form-check">
+                           <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-fine_sandy_loam" data-field="fine_sandy_loam" />
+                           <label class="form-check-label" for="include-null-fine_sandy_loam">Include Null</label>
+                       </div>
+                       <input type="number" name="fine_sandy_loam-min" id="fine_sandy_loam-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                       <input type="number" name="fine_sandy_loam-max" id="fine_sandy_loam-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                   </div>
+                   <!-- Loam -->
+                   <div class="collapse-header" data-target="#loam"><span class="collapse-icon">+</span>Loam</div>
+                   <div id="loam" class="collapse-content">
+                       <div class="form-check">
+                           <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-loam" data-field="loam" />
+                           <label class="form-check-label" for="include-null-loam">Include Null</label>
+                       </div>
+                       <input type="number" name="loam-min" id="loam-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                       <input type="number" name="loam-max" id="loam-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                   </div>
+                   <!-- Loamy_coarse_sand -->
+                   <div class="collapse-header" data-target="#loamy_coarse_sand"><span class="collapse-icon">+</span>Loamy_coarse_sand</div>
+                   <div id="loamy_coarse_sand" class="collapse-content">
+                       <div class="form-check">
+                           <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-loamy_coarse_sand" data-field="loamy_coarse_sand" />
+                           <label class="form-check-label" for="include-null-loamy_coarse_sand">Include Null</label>
+                       </div>
+                       <input type="number" name="loamy_coarse_sand-min" id="loamy_coarse_sand-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                       <input type="number" name="loamy_coarse_sand-max" id="loamy_coarse_sand-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                   </div>
+                   <!-- Loamy_fine_sand -->
+                   <div class="collapse-header" data-target="#loamy_fine_sand"><span class="collapse-icon">+</span>Loamy_fine_sand</div>
+                   <div id="loamy_fine_sand" class="collapse-content">
+                       <div class="form-check">
+                           <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-loamy_fine_sand" data-field="loamy_fine_sand" />
+                           <label class="form-check-label" for="include-null-loamy_fine_sand">Include Null</label>
+                       </div>
+                       <input type="number" name="loamy_fine_sand-min" id="loamy_fine_sand-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                       <input type="number" name="loamy_fine_sand-max" id="loamy_fine_sand-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                   </div>
+                   <!-- Loamy_sand -->
+                   <div class="collapse-header" data-target="#loamy_sand"><span class="collapse-icon">+</span>Loamy_sand</div>
+                   <div id="loamy_sand" class="collapse-content">
+                       <div class="form-check">
+                           <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-loamy_sand" data-field="loamy_sand" />
+                           <label class="form-check-label" for="include-null-loamy_sand">Include Null</label>
+                       </div>
+                       <input type="number" name="loamy_sand-min" id="loamy_sand-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                       <input type="number" name="loamy_sand-max" id="loamy_sand-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                   </div>
+
+                    <!-- Sand -->
+                    <div class="collapse-header" data-target="#sand"><span class="collapse-icon">+</span>Sand</div>
+                    <div id="sand" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-sand" data-field="sand" />
+                            <label class="form-check-label" for="include-null-sand">Include Null</label>
+                        </div>
+                        <input type="number" name="sand-min" id="sand-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                        <input type="number" name="sand-max" id="sand-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                    </div>
+                    <!-- Sandy_clay -->
+                    <div class="collapse-header" data-target="#sandy_clay"><span class="collapse-icon">+</span>Sandy_clay</div>
+                    <div id="sandy_clay" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-sandy_clay" data-field="sandy_clay" />
+                            <label class="form-check-label" for="include-null-sandy_clay">Include Null</label>
+                        </div>
+                        <input type="number" name="sandy_clay-min" id="sandy_clay-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                        <input type="number" name="sandy_clay-max" id="sandy_clay-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                    </div>
+                    <!-- Sandy_clay_loam -->
+                    <div class="collapse-header" data-target="#sandy_clay_loam"><span class="collapse-icon">+</span>Sandy_clay_loam</div>
+                    <div id="sandy_clay_loam" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-sandy_clay_loam" data-field="sandy_clay_loam" />
+                            <label class="form-check-label" for="include-null-sandy_clay_loam">Include Null</label>
+                        </div>
+                        <input type="number" name="sandy_clay_loam-min" id="sandy_clay_loam-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                        <input type="number" name="sandy_clay_loam-max" id="sandy_clay_loam-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                    </div>
+                    <!-- Sandy_loam -->
+                    <div class="collapse-header" data-target="#sandy_loam"><span class="collapse-icon">+</span>Sandy_loam</div>
+                    <div id="sandy_loam" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-sandy_loam" data-field="sandy_loam" />
+                            <label class="form-check-label" for="include-null-sandy_loam">Include Null</label>
+                        </div>
+                        <input type="number" name="sandy_loam-min" id="sandy_loam-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                        <input type="number" name="sandy_loam-max" id="sandy_loam-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                    </div>
+                    <!-- Silt_loam -->
+                    <div class="collapse-header" data-target="#silt_loam"><span class="collapse-icon">+</span>Silt_loam</div>
+                    <div id="silt_loam" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-silt_loam" data-field="silt_loam" />
+                            <label class="form-check-label" for="include-null-silt_loam">Include Null</label>
+                        </div>
+                        <input type="number" name="silt_loam-min" id="silt_loam-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                        <input type="number" name="silt_loam-max" id="silt_loam-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                    </div>
+                    <!-- Silty_clay -->
+                    <div class="collapse-header" data-target="#silty_clay"><span class="collapse-icon">+</span>Silty_clay</div>
+                    <div id="silty_clay" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-silty_clay" data-field="silty_clay" />
+                            <label class="form-check-label" for="include-null-silty_clay">Include Null</label>
+                        </div>
+                        <input type="number" name="silty_clay-min" id="silty_clay-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                        <input type="number" name="silty_clay-max" id="silty_clay-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                    </div>
+                    <!-- Silty_clay_loam -->
+                    <div class="collapse-header" data-target="#silty_clay_loam"><span class="collapse-icon">+</span>Silty_clay_loam</div>
+                    <div id="silty_clay_loam" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-silty_clay_loam" data-field="silty_clay_loam" />
+                            <label class="form-check-label" for="include-null-silty_clay_loam">Include Null</label>
+                        </div>
+                        <input type="number" name="silty_clay_loam-min" id="silty_clay_loam-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                        <input type="number" name="silty_clay_loam-max" id="silty_clay_loam-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                    </div>
+
+                    <!-- Very_fine_sandy_loam -->
+                    <div class="collapse-header" data-target="#very_fine_sandy_loam"><span class="collapse-icon">+</span>Very_fine_sandy_loam</div>
+                    <div id="very_fine_sandy_loam" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-very_fine_sandy_loam" data-field="very_fine_sandy_loam" />
+                            <label class="form-check-label" for="include-null-very_fine_sandy_loam">Include Null</label>
+                        </div>
+                        <input type="number" name="very_fine_sandy_loam-min" id="very_fine_sandy_loam-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                        <input type="number" name="very_fine_sandy_loam-max" id="very_fine_sandy_loam-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                    </div>
+                </div>
+
+
+                <!-- Road Filters -->
+                <div class="collapse-header" data-target="#roadFilters">
+                        <span class="collapse-icon">+</span>
+                        Road Filters
+                </div>
+                <div id="roadFilters" class="collapse-content">
+                    <!-- Nearest Road Type -->
+                    <div class="collapse-header" data-target="#nearestRoadTypeFilter">
+                        <span class="collapse-icon">+</span>
+                        Nearest Road Type
+                    </div>
+                    <div id="nearestRoadTypeFilter" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-nearest_road_type" data-field="nearest_road_type" />
+                            <label class="form-check-label" for="include-null-nearest_road_type">Include Null</label>
+                        </div>
+                        <input type="number" name="nearest_road_type-min" id="nearest_road_type-min" class="form-control" placeholder="Min" />
+                        <input type="number" name="nearest_road_type-max" id="nearest_road_type-max" class="form-control" placeholder="Max" style="margin-top: 8px;" />
+                    </div>
+                    <!-- Distance to Nearest Road from Centroid -->
+                    <div class="collapse-header" data-target="#distance_to_nearest_road_from_centroid">
+                        <span class="collapse-icon">+</span>
+                        Distance to Nearest Road (from centroid)
+                    </div>
+                    <div id="distance_to_nearest_road_from_centroid" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-distance_to_nearest_road_from_centroid" data-field="distance_to_nearest_road_from_centroid" />
+                            <label class="form-check-label" for="include-null-distance_to_nearest_road_from_centroid">Include Null</label>
+                        </div>
+                        <input type="number" name="distance_to_nearest_road_from_centroid-min" id="distance_to_nearest_road_from_centroid-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                        <input type="number" name="distance_to_nearest_road_from_centroid-max" id="distance_to_nearest_road_from_centroid-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                    </div>
+                </div>
+
+                 <!-- Percentage Filters -->
+                 <div class="collapse-header" data-target="#percentageFilters">
+                    <span class="collapse-icon">+</span>
+                    Percentage Filters
+                </div>
+                <div id="percentageFilters" class="collapse-content">
+                     <!-- Trees Percentage -->
+                     <div class="collapse-header" data-target="#trees_percentage"><span class="collapse-icon">+</span>Trees Percentage</div>
+
+                     <div id="trees_percentage" class="collapse-content">
+                         <div class="form-check">
+                             <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-trees_percentage" data-field="trees_percentage" />
+                             <label class="form-check-label" for="include-null-trees_percentage">Include Null</label>
+                         </div>
+                         <input type="number" name="trees_percentage-min" id="trees_percentage-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                         <input type="number" name="trees_percentage-max" id="trees_percentage-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                     </div>
+                     <!-- Built Percentage -->
+                     <div class="collapse-header" data-target="#built_percentage">
+                         <span class="collapse-icon">+</span>
+                         Built Percentage
+                     </div>
+                     <div id="built_percentage" class="collapse-content">
+                         <div class="form-check">
+                             <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-built_percentage" data-field="built_percentage" />
+                             <label class="form-check-label" for="include-null-built_percentage">Include Null</label>
+                         </div>
+                         <input type="number" name="built_percentage-min" id="built_percentage-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                         <input type="number" name="built_percentage-max" id="built_percentage-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                     </div>
+                     <!-- Grass Percentage -->
+                     <div class="collapse-header" data-target="#grass_percentage">
+                         <span class="collapse-icon">+</span>
+                         Grass Percentage
+                     </div>
+                     <div id="grass_percentage" class="collapse-content">
+                         <div class="form-check">
+                             <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-grass_percentage" data-field="grass_percentage" />
+                             <label class="form-check-label" for="include-null-grass_percentage">Include Null</label>
+                         </div>
+                         <input type="number" name="grass_percentage-min" id="grass_percentage-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                         <input type="number" name="grass_percentage-max" id="grass_percentage-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                     </div>
+                     <div class="collapse-header" data-target="#crops_percentage">
+                         <span class="collapse-icon">+</span>
+                         Crops Percentage
+                     </div>
+                     <div id="crops_percentage" class="collapse-content">
+                         <div class="form-check">
+                             <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-crops_percentage" data-field="crops_percentage" />
+                             <label class="form-check-label" for="include-null-crops_percentage">Include Null</label>
+                         </div>
+                         <input type="number" name="crops_percentage-min" id="crops_percentage-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                         <input type="number" name="crops_percentage-max" id="crops_percentage-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                     </div>
+                     <!-- Shrub and Scrub Percentage -->
+                     <div class="collapse-header" data-target="#shrub_and_scrub_percentage">
+                         <span class="collapse-icon">+</span>
+                         Shrub and Scrub Percentage
+                     </div>
+                     <div id="shrub_and_scrub_percentage" class="collapse-content">
+                         <div class="form-check">
+                             <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-shrub_and_scrub_percentage" data-field="shrub_and_scrub_percentage" />
+                             <label class="form-check-label" for="include-null-state">Include Null</label>
+                         </div>
+                         <input type="number" name="shrub_and_scrub_percentage-min" id="shrub_and_scrub_percentage-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                         <input type="number" name="shrub_and_scrub_percentage-max" id="shrub_and_scrub_percentage-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                     </div>
+                     <!-- Bare Percentage -->
+                     <div class="collapse-header" data-target="#bare_percentage">
+                         <span class="collapse-icon">+</span>
+                         Bare Percentage
+                     </div>
+                     <div id="bare_percentage" class="collapse-content">
+                         <div class="form-check">
+                             <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-bare_percentage" data-field="bare_percentage" />
+                             <label class="form-check-label" for="include-null-state">Include Null</label>
+                         </div>
+                         <input type="number" name="bare_percentage-min" id="bare_percentage-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                         <input type="number" name="bare_percentage-max" id="bare_percentage-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                     </div>
+                     <!-- Water Percentage -->
+                     <div class="collapse-header" data-target="#water_percentage">
+                         <span class="collapse-icon">+</span>
+                         Water Percentage
+                     </div>
+                     <div id="water_percentage" class="collapse-content">
+                         <div class="form-check">
+                             <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-water_percentage" data-field="water_percentage" />
+                             <label class="form-check-label" for="include-null-state">Include Null</label>
+                         </div>
+                         <input type="number" name="water_percentage-min" id="water_percentage-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                         <input type="number" name="water_percentage-max" id="water_percentage-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                     </div>
+                     <!-- Flooded Vegetation Percentage -->
+                     <div class="collapse-header" data-target="#flooded_vegetation_percentage"><span class="collapse-icon">+</span>Flooded Vegetation Percentage</div>
+                     <div id="flooded_vegetation_percentage" class="collapse-content">
+                         <div class="form-check">
+                             <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-flooded_vegetation_percentage" data-field="flooded_vegetation_percentage" />
+                             <label class="form-check-label" for="include-null-state">Include Null</label>
+                         </div>
+                         <input type="number" name="flooded_vegetation_percentage-min" id="flooded_vegetation_percentage-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                         <input type="number" name="flooded_vegetation_percentage-max" id="flooded_vegetation_percentage-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                     </div>
+                     <!-- Snow and Ice Percentage -->
+                     <div class="collapse-header" data-target="#snow_and_ice_percentage"><span class="collapse-icon">+</span>Snow and Ice Percentage</div>
+                     <div id="snow_and_ice_percentage" class="collapse-content">
+                         <div class="form-check">
+                             <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-snow_and_ice_percentage" data-field="snow_and_ice_percentage" />
+                             <label class="form-check-label" for="include-null-snow_and_ice_percentage">Include Null</label>
+                         </div>
+                         <input type="number" name="snow_and_ice_percentage-min" id="snow_and_ice_percentage-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                         <input type="number" name="snow_and_ice_percentage-max" id="snow_and_ice_percentage-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                     </div>
+                </div>
+
+
+                <div class="collapse-header" data-target="#otherFilters">
+                    <span class="collapse-icon">+</span>
+                    Area Filters
+                </div>
+
+                <div id="otherFilters" class="collapse-content">
+                   
+                    <!-- Parcel Area -->
+                    <div class="collapse-header" data-target="#parcel_area"><span class="collapse-icon">+</span>Parcel Area</div>
+                    <div id="parcel_area" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-parcel_area" data-field="parcel_area" />
+                            <label class="form-check-label" for="include-null-parcel_area">Include Null</label>
+                        </div>
+                        <input type="number" name="parcel_area-min" id="parcel_area-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                        <input type="number" name="parcel_area-max" id="parcel_area-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                    </div>
+                    <!-- Largest Rectangle Area -->
+                    <div class="collapse-header" data-target="#largest_rect_area"><span class="collapse-icon">+</span>Largest Rectangle Area</div>
+                    <div id="largest_rect_area" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-largest_rect_area" data-field="largest_rect_area" />
+                            <label class="form-check-label" for="include-null-largest_rect_area">Include Null</label>
+                        </div>
+                        <input type="number" name="largest_rect_area-min" id="largest_rect_area-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                        <input type="number" name="largest_rect_area-max" id="largest_rect_area-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                    </div>
+                    <!-- Percent Rectangle -->
+                    <div class="collapse-header" data-target="#percent_rectangle"><span class="collapse-icon">+</span>Percent Rectangle</div>
+                    <div id="percent_rectangle" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-percent_rectangle" data-field="percent_rectangle" />
+                            <label class="form-check-label" for="include-null-percent_rectangle">Include Null</label>
+                        </div>
+                        <input type="number" name="percent_rectangle-min" id="percent_rectangle-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                        <input type="number" name="percent_rectangle-max" id="percent_rectangle-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                    </div>
+                    <!-- Largest Square Area -->
+                    <div class="collapse-header" data-target="#largest_square_area"><span class="collapse-icon">+</span>Largest Square Area</div>
+                    <div id="largest_square_area" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-largest_square_area" data-field="largest_square_area" />
+                            <label class="form-check-label" for="include-null-largest_square_area">Include Null</label>
+                        </div>
+                        <input type="number" name="largest_square_area-min" id="largest_square_area-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                        <input type="number" name="largest_square_area-max" id="largest_square_area-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                    </div>
+                    <!-- Percent Square -->
+                    <div class="collapse-header" data-target="#percent_square"><span class="collapse-icon">+</span>Percent Square</div>
+                    <div id="percent_square" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-percent_square" data-field="percent_square" />
+                            <label class="form-check-label" for="include-null-percent_square">Include Null</label>
+                        </div>
+                        <input type="number" name="percent_square-min" id="percent_square-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                        <input type="number" name="percent_square-max" id="percent_square-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                    </div>
+                    <!-- Largest Rectangle Area Cleaned -->
+                    <div class="collapse-header" data-target="#largest_rect_area_cleaned"><span class="collapse-icon">+</span>Largest Rectangle Area Cleaned</div>
+                    <div id="largest_rect_area_cleaned" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-largest_rect_area_cleaned" data-field="largest_rect_area_cleaned" />
+                            <label class="form-check-label" for="include-null-largest_rect_area_cleaned">Include Null</label>
+                        </div>
+                        <input type="number" name="largest_rect_area_cleaned-min" id="largest_rect_area_cleaned-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                        <input type="number" name="largest_rect_area_cleaned-max" id="largest_rect_area_cleaned-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                    </div>
+                    <!-- Largest Square Area Cleaned -->
+                    <div class="collapse-header" data-target="#largest_square_area_cleaned"><span class="collapse-icon">+</span>Largest Square Area Cleaned</div>
+                    <div id="largest_square_area_cleaned" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-largest_square_area_cleaned" data-field="largest_square_area_cleaned" />
+                            <label class="form-check-label" for="include-null-largest_square_area_cleaned">Include Null</label>
+                        </div>
+                        <input type="number" name="largest_square_area_cleaned-min" id="largest_square_area_cleaned-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                        <input type="number" name="largest_square_area_cleaned-max" id="largest_square_area_cleaned-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                    </div>
+                    
+                    <!-- Num_buildings -->
+                    <div class="collapse-header" data-target="#num_buildings"><span class="collapse-icon">+</span>Num_buildings</div>
+                    <div id="num_buildings" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-num_buildings" data-field="num_buildings" />
+                            <label class="form-check-label" for="include-null-num_buildings">Include Null</label>
+                        </div>
+                        <input type="number" name="num_buildings-min" id="num_buildings-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                        <input type="number" name="num_buildings-max" id="num_buildings-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                    </div>
+                   
+                    <!-- Smallest_building -->
+                    <div class="collapse-header" data-target="#smallest_building"><span class="collapse-icon">+</span>Smallest_building</div>
+                    <div id="smallest_building" class="collapse-content">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input include-null-checkbox" id="include-null-smallest_building" data-field="smallest_building" />
+                            <label class="form-check-label" for="include-null-smallest_building">Include Null</label>
+                        </div>
+                        <input type="number" name="smallest_building-min" id="smallest_building-min" class="form-control" placeholder="Min" style="width: 100%;" />
+                        <input type="number" name="smallest_building-max" id="smallest_building-max" class="form-control" placeholder="Max" style="width: 100%; margin-top: 8px;" />
+                    </div>
+                    
+                </div>
+            </nav>
+        </form>
+    </div>
+</div>
+<div class="data-body">
+    <div id="count">
+        <div class="count-rows" style="visibility: hidden;"></div>
+        <div class="count-owners" style="visibility: hidden;"></div>
+    </div>
+
+    <div id="content" class="col-9"></div>
+
+    <!-- Pagination section -->
+    <div id="pagination">
+        <button id="prev-page" class="btn btn-primary btn-sm" disabled>Previous</button>
+        <span id="current-page">1</span>
+        <button id="next-page" class="btn btn-primary btn-sm">Next</button>
+    </div>
+</div>
+
+
+<!-- Modal for Export Data -->
+<div class="modal fade" id="exportModal" tabindex="-1" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportModalLabel">Export Data</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="export-form">
+                    <div class="form-group">
+                        <label for="campaign-name">Campaign Name</label>
+                        <input type="text" class="form-control" id="campaign-name" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="mail-groups">Mail Groups</label>
+                        <input type="text" class="form-control" id="mail-groups" placeholder="Enter mail group names" />
+                        <small class="form-text text-muted">Press Enter to add each mail group as a chip.</small>
+                        <div id="mail-group-chips" class="mt-2"></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Independent collapsible sections
+        document.querySelectorAll(".collapse-header").forEach((header) => {
+            header.addEventListener("click", function () {
+                const target = document.querySelector(this.getAttribute("data-target"));
+                const icon = this.querySelector(".collapse-icon");
+                target.classList.toggle("open");
+
+                // Change icon on open/close
+                if (target.classList.contains("open")) {
+                    icon.textContent = "-"; // Icon for open state
+                } else {
+                    icon.textContent = "+"; // Icon for closed state
+                }
+            });
+        });
+    });
+</script>
+<script type="text/javascript" src="/static/js/jquery-2.2.4.min.js"></script>
+<script type="text/javascript" src="/static/js/jquery.multi-select.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+<script type="text/javascript">
+    var select_type_fields = {
+        state: "Property_State_Name",
+        county: "Property_County_Name",
+        city: "Property_City",
+        "property-access-type": "Access_Type",
+        "property-zip-codes-match": "Zip_Code_Matching",
+        "tree-coverage-select": "tree_coverage",
+        "wells-select": "well",
+        "owner-type-select": "Owner_Type",
+    };
+
+    var numeric_fields = {
+        "lot-acreage": "Lot_Acreage",
+        floodzones: "Significant_Flood_Zones",
+        wetlands: "Wetlands_Total",
+        slopes: "slope_mean",
+    };
+
+    function formatOptionText(text) {
+        // Title case conversion using regular expression
+        return text.replace(/\w\S*/g, function (txt) {
+            return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        });
+    }
+    function hideElementUsingClass(classValue) {
+        $("." + classValue).hide();
+    }
+
+    function showElementUsingClass(classValue) {
+        $("." + classValue).show();
+    }
+
+    var initialDataObject = {}; // Global variable to store initial data
+
+    var FormItemsChanged = [];
+
+    var global_states = [];
+    var global_counties = [];
+    var global_cities = [];
+
+    function populateOwnerNameType() {
+    $.ajax({
+        url: "/get-owner-name-type",
+        method: "GET",
+        dataType: "json",
+        success: function (response) {
+            if (response && response.message === "success" && response.data) {
+                let ownerNameTypeSelect = $("#owner-name-type");
+
+                // Clear the existing options
+                ownerNameTypeSelect.empty();
+
+                // Add the "All" option
+                ownerNameTypeSelect.append('<option value="all">All</option>');
+
+                // Populate the select element with the fetched data
+                response.data.forEach(function (ownerNameType) {
+                    ownerNameTypeSelect.append(`<option value="${ownerNameType}">${ownerNameType}</option>`);
+                });
+
+                console.log(response.data);
+
+                // Set default selected values for owner name types
+                const defaultValues = ['Nonprofit', 'Unknown', 'Trust'];
+                
+                // Set the selected values directly
+                ownerNameTypeSelect.val(defaultValues.filter(value => 
+                    ownerNameTypeSelect.find(`option[value="${value}"]`).length > 0
+                ));
+
+                // Trigger change event to update any dependent logic
+                ownerNameTypeSelect.change();
+            } else {
+                console.error("Failed to fetch owner name types:", response.message);
+            }
+        },
+        error: function (error) {
+            console.error("Error during the AJAX request:", error);
+        },
+    });
+}
+
+
+    function populateFilterFields() {
+    // Fetch filter values from "/get-filter-values"
+    $.ajax({
+        url: "/get-filter-values",
+        dataType: "json",
+        success: function (response) {
+            if (response && response.data) {
+                let selectFields = Object.keys(select_type_fields);
+                let numberFields = Object.keys(numeric_fields);
+
+                // Process each filter option
+                Object.keys(response.data).forEach((key) => {
+                    let selectOptions = response.data[key];
+                    let selectField = $(`select#${key}`);
+
+                    // Handle select fields
+                    if (selectFields.includes(key) && !key.includes("zip")) {
+                        if (typeof selectOptions === "object" && key === "state") {
+                            // Populate state options
+                            selectField.empty().append('<option value="all">Select All</option>');
+                            Object.keys(selectOptions).forEach((state) => {
+                                selectField.append(`<option value="${state}">${state}</option>`);
+                            });
+
+                            // Set default selected state
+                            selectField.val("North Carolina").change(); // Default state
+
+                            // Handle state-specific logic
+                            selectField.on("change", function () {
+                                let selectedStates = $(this).val();
+                                let countySelectField = $("select#county");
+                                let citySelectField = $("select#city");
+
+                                countySelectField.empty().append('<option value="all">Select All</option>');
+                                citySelectField.empty().append('<option value="all">Select All</option>');
+
+                                if (Array.isArray(selectedStates) && selectedStates.length) {
+                                    selectedStates.forEach((state) => {
+                                        if (state !== "all" && selectOptions[state]) {
+                                            Object.keys(selectOptions[state]).forEach((county) => {
+                                                countySelectField.append(`<option value="${county}">${county}</option>`);
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        } else if (Array.isArray(selectOptions)) {
+                            let availableOptions = [...new Set(selectOptions.map((option) => option[1]))].map((option) => [option, option]);
+                            selectField.empty().append('<option value="all">Select All</option>');
+
+                            availableOptions.forEach(([value, text]) => {
+                                selectField.append(`<option value="${value}">${text}</option>`);
+                            });
+
+                         
+                        }
+                    }
+                    // Handle numeric fields
+                    else if (numberFields.includes(key) && !key.includes("price")) {
+                        let val = response.data[key] || {};
+                        let min = Math.floor(val.min) || 0;
+                        let max = Math.ceil(val.max) || 999999;
+
+                        let minInput = $(`input#${key}-min`);
+                        let maxInput = $(`input#${key}-max`);
+
+                        minInput
+                            .attr({
+                                min: min,
+                                max: max,
+                                title: `Min: ${min}, Max: ${max}`,
+                            })
+                            .val(min)
+                            .show()
+                            .parent()
+                            .show()
+                            .parent()
+                            .show();
+
+                        maxInput
+                            .attr({
+                                min: min,
+                                max: max,
+                                title: `Min: ${min}, Max: ${max}`,
+                            })
+                            .val(max)
+                            .show()
+                            .parent()
+                            .show()
+                            .parent()
+                            .show();
+                    }
+                    // Handle nearest_road_type field
+                    else if (key === "nearest_road_types") {
+                        if (Array.isArray(selectOptions)) {
+                            let availableOptions = [...new Set(selectOptions.map((option) => option))].map((option) => [option, option]);
+                            selectField.empty().append('<option value="all">Select All</option>');
+
+                            availableOptions.forEach(([value, text]) => {
+                                selectField.append(`<option value="${value}">${text}</option>`);
+                            });
+                        }
+                    } else {
+                        console.warn("Field not handled:", key);
+                    }
+                });
+
+                // Set default values for the other filters
+                $("#include-null-wetlands_total").prop('checked', true).change();; // Set Include Null for Wetlands Total
+                $("#include-null-largest_building").prop('checked', true).change();; // Set Include Null for Largest Building
+                $("#zip-code-matching").val("False").change();; // Set Zip Code Matching
+                $("#owner-do-not-mail").val("False").change();; // Set Owner Do Not Mail
+            } else {
+                console.error("Response data is missing or invalid:", response);
+            }
+            $("#spinner-overlay").css("display", "none");
+        },
+        error: function (error) {
+            console.error("Error fetching filter values:", error);
+            $("#spinner-overlay").css("display", "none");
+        },
+    });
+}
+
+    function populateNumericFilters() {
+        $.ajax({
+            url: "/get-numeric-filters",
+            method: "GET",
+            dataType: "json",
+            success: function (data) {
+                if (data.message === "success") {
+                    const results = data.data;
+                    let missed = [];
+
+                    $.each(results, function (key, value) {
+                        const $inputElement = $(`input[name="${key}"]`);
+
+                        if ($inputElement.length) {
+                            $inputElement.val(value);
+                        } else {
+                            // console.log($inputElement, " ", key);
+
+                            if (key === "significant_flood_zones-min") {
+                                console.log("pr$inputElement", key);
+                            }
+
+                            missed.push(key);
+                        }
+                    });
+                    console.log(missed);
+                } else {
+                    console.error("Failed to fetch numeric filter values:", data.message);
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("Error fetching numeric filter values:", textStatus, errorThrown);
+            },
+        });
+    }
+    let currentPage = 1;
+    const limit = 10; 
+
+    $(document).ready(function () {
+        $("#spinner-overlay").css("display", "flex");
+        
+        populateNumericFilters();
+        populateOwnerNameType();
+
+        // hideElementUsingClass('property-state-div')
+        // hideElementUsingClass('property-county-div');
+        // hideElementUsingClass('property-city-div');
+        hideElementUsingClass("property-access-type-div");
+        hideElementUsingClass("property-zip-codes-match-div");
+        hideElementUsingClass("property-owner-do-not-mail-div");
+        hideElementUsingClass("lot-acreage-div");
+        hideElementUsingClass("market-price-div");
+        hideElementUsingClass("tree-coverage-div");
+        hideElementUsingClass("well-select-div");
+        hideElementUsingClass("owner-type-div");
+        hideElementUsingClass("floodzones-div");
+        hideElementUsingClass("wetlands-div");
+        hideElementUsingClass("slopes-div");
+        hideElementUsingClass("count-display");
+        $("#property-count").show();
+        $("#fetch-results").show();
+
+        console.info("called filter fields populator. showing btns");
+
+        $("#property-count").show();
+        $("#fetch-results").show();
+
+        populateFilterFields();
+
+        $("select").on("change", function () {
+            let name = $(this).attr("name");
+            FormItemsChanged.push(name);
+        });
+
+        $("input").on("change", function () {
+            let name = $(this).attr("name");
+            FormItemsChanged.push(name);
+        });
+
+        // Function to capture initial form data
+        function captureInitialData() {
+            var formData = $("#fetchRecordsForm").serializeArray();
+            $.each(formData, function (i, field) {
+                initialDataObject[field.name] = field.value;
+            });
+
+            console.log("initalformadata ", initialDataObject);
+        }
+
+        captureInitialData();
+
+        // Function to get changed fields
+        function getChangedFields() {
+            var formData = $("#fetchRecordsForm").serializeArray();
+            var fieldMap = {};
+            var changedFields = [];
+
+            // Iterate through the serialized array and build the field map
+            $.each(formData, function (i, field) {
+                if (field.name && FormItemsChanged.includes(field.name)) {
+                    // Extract base field name without '-min' or '-max'
+                    let baseFieldName = field.name.replace(/-min$/, "").replace(/-max$/, "");
+                    // Mark this base field as changed
+                    if (!changedFields.includes(baseFieldName)) {
+                        changedFields.push(baseFieldName);
+                    }
+
+                    // Check if field is a multi-select or specific type field
+                    if (
+                        select_type_fields.hasOwnProperty(field.name) ||
+                        ["property-counties", "property-states", "property-cities", "property-access-type", "zip-code-matching", "nearest_road_types", "owner-name-type"].includes(field.name)
+                    ) {
+                        if (fieldMap.hasOwnProperty(field.name)) {
+                            fieldMap[field.name].push(field.value);
+                        } else {
+                            fieldMap[field.name] = [];
+                            fieldMap[field.name].push(field.value);
+                        }
+                    } else if (field.name.includes("-min") || field.name.includes("-max")) {
+                        let field_name = baseFieldName; // Use the base field name
+                        if (!fieldMap.hasOwnProperty(field_name)) {
+                            fieldMap[field_name] = {};
+                        }
+                        if (field.name.includes("-min")) {
+                            fieldMap[field_name]["min"] = field.value;
+                        } else if (field.name.includes("-max")) {
+                            fieldMap[field_name]["max"] = field.value;
+                        }
+                    } else {
+                        fieldMap[field.name] = field.value;
+                    }
+                }
+            });
+
+            // Add logic to include/exclude null values only for changed fields
+            $(".include-null-checkbox").each(function () {
+                var fieldName = $(this).data("field");
+                console.log(fieldName);
+
+                // Use the base field name for comparison
+                let baseFieldName = fieldName.replace(/-min$/, "").replace(/-max$/, "");
+
+                if (changedFields.includes(baseFieldName)) {
+                    // Only include null filter if the field value has changed
+                    if ($(this).is(":checked")) {
+                        fieldMap[baseFieldName + "-include-null"] = true;
+                    } else {
+                        fieldMap[baseFieldName + "-include-null"] = false;
+                    }
+                }
+            });
+
+            console.log(fieldMap);
+            return fieldMap;
+        }
+
+        $("#property-count").click(function () {
+            console.log("property count clicked");
+            var dataObject = getChangedFields();
+            console.log("Changed dataObject", dataObject);
+
+            // Show spinner overlay and apply blur to the body
+            $(".count-rows").empty().append("<span><b>Fetching count...</b></span>");
+            $(".count-owners").empty();
+
+            $(".count-rows").css("visibility", "visible");
+            $(".count-owners").css("visibility", "visible");
+
+            showElementUsingClass("count-display");
+            $("#spinner-overlay").css("display", "flex"); // Show the spinner
+
+            $.ajax({
+                url: "/query-count",
+                type: "POST",
+                data: JSON.stringify(dataObject),
+                contentType: "application/json",
+                success: function (response) {
+                    $("#spinner-overlay").css("display", "none"); // Hide spinner on success
+                    $("body").removeClass("blur"); // Remove blur effect
+
+                    if (
+                        response &&
+                        typeof response == "object" &&
+                        response.hasOwnProperty("message") &&
+                        response.hasOwnProperty("count") &&
+                        response.message.toLowerCase() == "success" &&
+                        typeof response.count == "object" &&
+                        response.count.hasOwnProperty("all_rows") &&
+                        response.count.hasOwnProperty("distinct_owners")
+                    ) {
+                        let count = response.count;
+                        $(".count-rows").empty().append(`<span><b>No. of Properties: </b>${count.all_rows}</span>`);
+                        $(".count-owners").empty().append(`<span><b>No. of Distinct Owners: </b>${count.distinct_owners}</span>`);
+                    } else {
+                        hideElementUsingClass("count-display");
+                    }
+                },
+                error: function (error) {
+                    console.error("Error fetching counts:", error);
+                    $("#spinner-overlay").css("display", "none"); // Hide spinner on error
+                    $("body").removeClass("blur"); // Remove blur effect
+                    $(".count-rows").empty().append("<span><b>Error fetching count</b></span>");
+                },
+            });
+        });
+
+        function fetchResults(page) {
+            var dataObject = getChangedFields();
+            console.log("Changed dataObject", JSON.stringify(dataObject));
+
+            // Calculate the offset
+            const offset = (page - 1) * limit;
+
+            // Add limit and offset to the data object
+            dataObject.limit = limit;
+            dataObject.offset = offset;
+
+            $("#spinner-overlay").css("display", "flex");
+
+            $.ajax({
+                url: "/get-records-v2",
+                type: "POST",
+                data: JSON.stringify(dataObject),
+                contentType: "application/json",
+                success: function (response) {
+                    $("#spinner-overlay").css("display", "none");
+
+                    if (response.data && response.data.length > 0) {
+                        // Show pagination
+                        $("#pagination").css("visibility", "visible");
+
+                        // Update the content with the table HTML
+                        $("#content").html(response.data);
+
+                        // Update the current page display
+                        $("#current-page").text(currentPage);
+
+                        // Enable/disable buttons based on current page
+                        $("#prev-page").prop("disabled", currentPage === 1);
+                    } else {
+                        $("#content").html("<p>No records found.</p>");
+                        // Hide pagination if no data
+                        $("#pagination").css("visibility", "hidden");
+                    }
+                },
+                error: function (error) {
+                    console.error("Error submitting form:", error);
+                    $("#spinner-overlay").css("display", "none");
+                    $("#content").html("<p>Error fetching records.</p>");
+                    // Hide pagination if there's an error
+                    $("#pagination").css("visibility", "hidden");
+                }
+            });
+        }
+
+ 
+    $("#next-page").click(function () {
+        currentPage++;
+            fetchResults(currentPage);
+        });
+
+    $("#prev-page").click(function () {
+        if (currentPage > 1) {
+            currentPage--;
+            fetchResults(currentPage);
+        }
+    });
+    $("#fetch-results").click(function () {
+        currentPage = 1;
+        fetchResults(currentPage);
+        });
+
+    });
+
+   
+
+    // Attach click event listener to all 'Deselect All' buttons
+    document.querySelectorAll(".deselect-btn").forEach((button) => {
+        button.addEventListener("click", function () {
+            const selectId = this.getAttribute("data-select-id");
+            const selectElement = document.getElementById(selectId);
+
+            // Deselect all options
+            for (let i = 0; i < selectElement.options.length; i++) {
+                selectElement.options[i].selected = false;
+            }
+        });
+    });
+    var mailGroups = [];
+
+    // Show the modal when the export button is clicked
+    $("#export-data-btn").click(function () {
+        $("#exportModal").modal("show");
+    });
+
+    // Add mail group chip on Enter key press
+    $("#mail-groups").on("keypress", function (e) {
+        if (e.which === 13) {
+            // Enter key pressed
+            e.preventDefault();
+            var mailGroup = $(this).val().trim();
+            if (mailGroup !== "") {
+                mailGroups.push(mailGroup);
+                $("#mail-group-chips").append('<span class="badge badge-secondary mx-1">' + mailGroup + "</span>");
+                $(this).val("");
+            }
+        }
+    });
+
+    // Handle form submission
+    $("#export-form").submit(function (e) {
+        e.preventDefault();
+        var campaignName = $("#campaign-name").val();
+        //  var marketPriceMin = $('#market-price-min').val();
+        // var marketPriceMax = $('#market-price-max').val();
+
+        // Validate Market Price inputs
+        // if (parseFloat(marketPriceMin) > parseFloat(marketPriceMax)) {
+        //     alert('Market Price Min cannot be greater than Market Price Max.');
+        //     return;
+        // }
+
+        if (campaignName && mailGroups.length > 0) {
+            // Show the spinner overlay
+            $("#spinner-overlay").css("display", "flex");
+
+            // Prepare data for AJAX request
+            var requestData = {
+                mailGroups: mailGroups.join(","),
+                // marketPriceMin: marketPriceMin,
+                // marketPriceMax: marketPriceMax
+            };
+
+            // Perform AJAX request
+            $.ajax({
+                url: "/export-records",
+                method: "GET",
+                data: requestData,
+                xhrFields: {
+                    responseType: "blob", // Important for handling binary data
+                },
+                success: function (data, status, xhr) {
+                    // Hide the spinner overlay
+                    $("#spinner-overlay").css("display", "none");
+
+                    // Create a link element to initiate the download
+                    var link = document.createElement("a");
+                    link.href = window.URL.createObjectURL(data);
+                    link.download = "records.zip"; // Suggested filename for the downloaded file
+                    document.body.appendChild(link);
+
+                    // Automatically click the link to trigger the download
+                    link.click();
+
+                    // Clean up
+                    document.body.removeChild(link);
+                },
+                error: function (xhr, status, error) {
+                    // Hide the spinner overlay and handle error
+                    $("#spinner-overlay").css("display", "none");
+                    alert("An error occurred while exporting the records. Please try again.");
+                },
+            });
+
+            // Close the modal after submission
+            $("#exportModal").modal("hide");
+        } else {
+            alert("Please fill out all fields.");
+        }
+    });
+</script>
+
+{% endblock %}
