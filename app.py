@@ -714,7 +714,7 @@ def assign_control_numbers(df):
     control_numbers = random.sample(range(min_value, max_value + 1), num_combinations)
 
     control_numbers = [
-        str(control_number).zfill(6) for control_number in control_numbers
+        str(control_number).zfill(5) for control_number in control_numbers
     ]
 
     # Map unique combinations to control numbers

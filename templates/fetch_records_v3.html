@@ -1069,10 +1069,11 @@
 
                             // Set default selected state
                             selectField.val("North Carolina").change(); // Default state
-
+                            
                             // Handle state-specific logic
                             selectField.on("change", function () {
                                 let selectedStates = $(this).val();
+                                console.log(selectedStates,"-------------------------.")
                                 let countySelectField = $("select#county");
                                 let citySelectField = $("select#city");
 
@@ -1089,6 +1090,14 @@
                                     });
                                 }
                             });
+                            let defaultState = "North Carolina"; 
+                            if (selectOptions[defaultState]) {
+                                let countySelectField = $("select#county");
+                                countySelectField.empty().append('<option value="all">Select All</option>');
+                                Object.keys(selectOptions[defaultState]).forEach((county) => {
+                                    countySelectField.append(`<option value="${county}">${county}</option>`);
+                                });
+                            }
                         } else if (Array.isArray(selectOptions)) {
                             let availableOptions = [...new Set(selectOptions.map((option) => option[1]))].map((option) => [option, option]);
                             selectField.empty().append('<option value="all">Select All</option>');
